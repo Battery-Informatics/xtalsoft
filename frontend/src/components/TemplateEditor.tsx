@@ -21,18 +21,18 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onChan
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <label className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+          <label className="text-sm font-semibold text-slate-800 flex items-center gap-2">
             GULP Input Deck Template (gin1)
           </label>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-600">
             Optimizer deck template containing force-field specifications and unit cell directives.
           </p>
         </div>
       </div>
 
       {/* Placeholder validation pills */}
-      <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-800">
-        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+      <div className="bg-white p-3 rounded-lg border border-slate-200">
+        <div className="text-[11px] font-semibold text-slate-600 uppercase mb-2">
           Required XtalOpt Macro Tags
         </div>
         <div className="flex flex-wrap gap-2">
@@ -43,15 +43,15 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onChan
                 key={tag}
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono transition-colors ${
                   isPresent
-                    ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-800/60'
-                    : 'bg-rose-950/70 text-rose-300 border border-rose-800/60'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : 'bg-rose-50 text-rose-700 border border-rose-200'
                 }`}
                 title={`${label} (${tag})`}
               >
                 {isPresent ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
                 ) : (
-                  <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
+                  <AlertCircle className="w-3.5 h-3.5 text-rose-700" />
                 )}
                 {tag}
               </span>
@@ -61,12 +61,12 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onChan
       </div>
 
       {/* Editor textarea */}
-      <div className="relative rounded-lg overflow-hidden border border-slate-800 focus-within:border-cyan-500 transition-colors">
+      <div className="relative rounded-lg overflow-hidden border border-slate-200 focus-within:border-blue-500 transition-colors">
         <textarea
           rows={14}
           value={template}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-slate-950 px-4 py-3 font-mono text-xs text-cyan-200 placeholder-slate-600 focus:outline-none resize-y leading-relaxed selection:bg-cyan-900/50"
+          className="w-full bg-white px-4 py-3 font-mono text-xs text-slate-900 placeholder-slate-600 focus:outline-none resize-y leading-relaxed"
           placeholder="opti conj conp&#10;cell&#10;  %a% %b% %c% %alphaDeg% %betaDeg% %gammaDeg%&#10;frac&#10;%coordsFrac%..."
           spellCheck={false}
         />

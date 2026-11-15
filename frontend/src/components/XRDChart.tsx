@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { X, HelpCircle } from 'lucide-react';
 import Plotly from 'plotly.js-dist-min';
-import { Upload, X, HelpCircle } from 'lucide-react';
 import type { XRDPak } from '../types';
 
 interface XRDChartProps {
@@ -127,7 +127,7 @@ export const XRDChart: React.FC<XRDChartProps> = ({ xrdPeaks, formula, tag }) =>
       type: 'scatter',
       name: `Simulated Peaks (${formula})`,
       line: {
-        color: '#10b981',
+        color: '#1d4ed8',
         width: 2,
       },
       hoverinfo: 'skip',
@@ -144,9 +144,9 @@ export const XRDChart: React.FC<XRDChartProps> = ({ xrdPeaks, formula, tag }) =>
       name: 'Reflections (hkl)',
       marker: {
         size: 7,
-        color: '#34d399',
+        color: '#1d4ed8',
         symbol: 'circle',
-        line: { color: '#064e3b', width: 1 },
+        line: { color: '#1e3a8a', width: 1 },
       },
     });
 
@@ -159,7 +159,7 @@ export const XRDChart: React.FC<XRDChartProps> = ({ xrdPeaks, formula, tag }) =>
         type: 'scatter',
         name: `Observed: ${experimentalData.filename}`,
         line: {
-          color: '#38bdf8', // sky-400
+          color: '#dc2626',
           width: 2,
         },
         hoverinfo: 'x+y',
@@ -169,10 +169,11 @@ export const XRDChart: React.FC<XRDChartProps> = ({ xrdPeaks, formula, tag }) =>
     const layout: Partial<Plotly.Layout> = {
       autosize: true,
       paper_bgcolor: 'transparent',
-      plot_bgcolor: 'rgba(15, 23, 42, 0.65)',
+      modebar: { bgcolor: 'rgba(255, 255, 255, 0)', color: '#94a3b8', activecolor: '#334155' },
+      plot_bgcolor: '#ffffff',
       font: {
         family: 'ui-sans-serif, system-ui, sans-serif',
-        color: '#94a3b8',
+        color: '#64748b',
         size: 11,
       },
       margin: { l: 60, r: 25, t: 25, b: 50 },
@@ -183,30 +184,30 @@ export const XRDChart: React.FC<XRDChartProps> = ({ xrdPeaks, formula, tag }) =>
         orientation: 'h',
         x: 0,
         y: 1.15,
-        bgcolor: 'rgba(30, 41, 59, 0.75)',
-        bordercolor: '#334155',
+        bgcolor: 'rgba(255, 255, 255, 0.9)',
+        bordercolor: '#e2e8f0',
         borderwidth: 1,
-        font: { size: 10, color: '#cbd5e1' },
+        font: { size: 10, color: '#334155' },
       },
       xaxis: {
         title: {
           text: 'Diffraction Angle 2θ (deg, Cu Kα)',
-          font: { color: '#cbd5e1', size: 12 },
+          font: { color: '#334155', size: 12 },
         },
         range: [10, 80],
-        gridcolor: '#1e293b',
-        zerolinecolor: '#334155',
-        color: '#94a3b8',
+        gridcolor: '#eef2f6',
+        zerolinecolor: '#cbd5e1',
+        color: '#64748b',
       },
       yaxis: {
         title: {
           text: 'Relative Intensity (%)',
-          font: { color: '#cbd5e1', size: 12 },
+          font: { color: '#334155', size: 12 },
         },
         range: [-2, 110],
-        gridcolor: '#1e293b',
-        zerolinecolor: '#334155',
-        color: '#94a3b8',
+        gridcolor: '#eef2f6',
+        zerolinecolor: '#cbd5e1',
+        color: '#64748b',
       },
     };
 
@@ -231,19 +232,19 @@ export const XRDChart: React.FC<XRDChartProps> = ({ xrdPeaks, formula, tag }) =>
   }, [xrdPeaks, formula, experimentalData]);
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col shadow-2xl">
+    <div className="bg-white border border-slate-200 rounded-lg p-4 flex flex-col ">
       {/* Header & Experimental Overlay Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-2 pb-3 border-b border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-2 pb-3 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-slate-100 text-sm tracking-wide">
+            <h3 className="font-semibold text-slate-900 text-sm">
               Simulated Powder XRD Pattern (Cu Kα)
             </h3>
-            <span className="text-[10px] font-mono bg-emerald-950 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded">
+            <span className="text-[10px] font-mono bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded">
               λ = 1.54184 Å
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5">
+          <p className="text-[11px] text-slate-600 mt-0.5">
             Bragg diffraction reflections for candidate {tag} ({formula})
           </p>
         </div>
@@ -259,13 +260,13 @@ export const XRDChart: React.FC<XRDChartProps> = ({ xrdPeaks, formula, tag }) =>
           />
 
           {experimentalData ? (
-            <div className="flex items-center gap-2 bg-sky-950/80 border border-sky-800/80 px-2.5 py-1 rounded-lg text-xs text-sky-200">
+            <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg text-xs text-blue-700">
               <span className="truncate max-w-[150px] font-mono text-[11px]">
                 {experimentalData.filename}
               </span>
               <button
                 onClick={handleClearExperimental}
-                className="text-sky-400 hover:text-white"
+                className="text-blue-700 hover:text-slate-900"
                 title="Remove experimental pattern"
               >
                 <X className="w-3.5 h-3.5" />
@@ -274,10 +275,9 @@ export const XRDChart: React.FC<XRDChartProps> = ({ xrdPeaks, formula, tag }) =>
           ) : (
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs border border-slate-700 transition-colors shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs border border-slate-300 transition-colors shadow-sm"
               title="Upload experimental .xy or .csv data to overlay"
             >
-              <Upload className="w-3.5 h-3.5 text-sky-400" />
               Overlay Experimental XRD
             </button>
           )}
@@ -285,7 +285,7 @@ export const XRDChart: React.FC<XRDChartProps> = ({ xrdPeaks, formula, tag }) =>
       </div>
 
       {errorMsg && (
-        <div className="mb-2 p-2 bg-red-950/60 border border-red-800 rounded text-xs text-red-300">
+        <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
           {errorMsg}
         </div>
       )}
@@ -307,7 +307,7 @@ export const XRDChart: React.FC<XRDChartProps> = ({ xrdPeaks, formula, tag }) =>
           <HelpCircle className="w-3 h-3" />
           Hover over peak markers to inspect (hkl) indices and d-spacings
         </span>
-        <span className="text-slate-400 font-mono">2θ: 10° – 80°</span>
+        <span className="text-slate-600 font-mono">2θ: 10° – 80°</span>
       </div>
     </div>
   );

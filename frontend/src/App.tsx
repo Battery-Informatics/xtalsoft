@@ -6,7 +6,6 @@ import { RunsMonitor } from './components/RunsMonitor';
 import { CrystalBatteryAnalyzer } from './components/CrystalBatteryAnalyzer';
 import { fetchHealth, fetchExperiments, fetchExperimentStructures } from './api/client';
 import type { Preset, ExperimentItem } from './types';
-import { Sparkles, Layers } from 'lucide-react';
 
 export function App() {
   const [currentTab, setCurrentTab] = useState<'studio' | 'presets' | 'runs' | 'analyzer'>('studio');
@@ -97,7 +96,7 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-900/50">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       <Navbar
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
@@ -130,67 +129,61 @@ export function App() {
 
         {currentTab === 'analyzer' && (
           <div className="space-y-6">
-            {/* Quick Candidate Switcher Bar */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-xl">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-emerald-400" />
-                <span className="font-bold text-white text-sm">Structure Inspector Selection:</span>
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h1 className="text-xl font-semibold text-slate-900">Structure Analysis</h1>
+                <p className="mt-1 text-sm text-slate-500">3D structure, simulated powder XRD and cathode metrics for one candidate.</p>
               </div>
-
-              <div className="flex items-center gap-4 flex-wrap text-xs">
-                {/* Select Run */}
-                <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5">
-                  <span className="text-slate-400">Run:</span>
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+                  Run
                   <select
                     value={selectedAnalyzerExpId}
                     onChange={(e) => setSelectedAnalyzerExpId(e.target.value)}
-                    className="bg-transparent text-slate-200 font-medium focus:outline-none cursor-pointer"
+                    className="h-9 min-w-48 rounded-md border border-slate-300 bg-white px-2.5 text-sm font-normal"
                   >
+                    {availableExperiments.length === 0 && <option value="">No runs yet</option>}
                     {availableExperiments.map((e) => (
-                      <option key={e.exp_id} value={e.exp_id} className="bg-slate-900 text-slate-200">
+                      <option key={e.exp_id} value={e.exp_id}>
                         {e.name} ({e.exp_id})
                       </option>
                     ))}
                   </select>
-                </div>
-
-                {/* Select Candidate Tag */}
-                <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5">
-                  <span className="text-slate-400">Candidate:</span>
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+                  Candidate
                   <select
                     value={selectedCandidateTag}
                     onChange={(e) => {
                       setSelectedCandidateTag(e.target.value);
                       setAnalyzerTarget({ expId: selectedAnalyzerExpId, structId: e.target.value });
                     }}
-                    className="bg-transparent text-emerald-400 font-mono font-medium focus:outline-none cursor-pointer"
+                    className="h-9 min-w-36 rounded-md border border-slate-300 bg-white px-2.5 font-mono text-sm font-normal"
                   >
                     {availableCandidates.length === 0 ? (
-                      <option value="">No candidates on disk</option>
+                      <option value="">None on disk</option>
                     ) : (
                       availableCandidates.map((tag) => (
-                        <option key={tag} value={tag} className="bg-slate-900 text-slate-200">
+                        <option key={tag} value={tag}>
                           {tag}
                         </option>
                       ))
                     )}
                   </select>
-                </div>
+                </label>
               </div>
             </div>
 
-            {/* Render 3D Visualizer, Powder XRD & Cathode Metrics */}
             {analyzerTarget && analyzerTarget.expId && analyzerTarget.structId ? (
               <CrystalBatteryAnalyzer
                 expId={analyzerTarget.expId}
                 structId={analyzerTarget.structId}
               />
             ) : (
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-16 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
-                <Layers className="w-12 h-12 text-slate-600 animate-pulse" />
-                <h3 className="text-lg font-semibold text-slate-300">No Candidate Selected</h3>
-                <p className="text-xs text-slate-500 max-w-md">
-                  Select an experiment and candidate from the selector above or click 'Analyze' on any candidate row in the Runs & Monitor tab.
+              <div className="rounded-lg border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+                <h3 className="text-sm font-medium text-slate-900">No candidate selected</h3>
+                <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">
+                  Pick a run and candidate above, or choose Analyze on a candidate in Runs.
                 </p>
               </div>
             )}
@@ -198,8 +191,10 @@ export function App() {
         )}
       </main>
 
-      <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500 font-mono">
-        XtalOpt Web Workbench & Crystal Visualizer • Powered by XtalOpt v15 Engine (Zero-Database Architecture)
+      <footer className="border-t border-slate-200 py-5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-xs text-slate-500">
+          XtalOpt Workbench · runs the XtalOpt v15 CLI
+        </div>
       </footer>
     </div>
   );

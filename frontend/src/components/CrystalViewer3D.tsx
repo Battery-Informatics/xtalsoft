@@ -1,16 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { RotateCcw, Box, Tag, Download, FileCode, Shield } from 'lucide-react';
 import * as $3Dmol from '3dmol';
-import {
-  RotateCcw,
-  Box,
-  Layers,
-  Tag,
-  Download,
-  Eye,
-  FileCode,
-  Shield,
-  Sparkles,
-} from 'lucide-react';
 import type { StructureAnalysisResult } from '../types';
 
 interface CrystalViewer3DProps {
@@ -98,7 +88,7 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
     containerRef.current.innerHTML = '';
 
     const viewer = ($3Dmol as any).createViewer(containerRef.current, {
-      backgroundColor: '0x020617', // slate-950
+      backgroundColor: '0xffffff',
     });
     viewerRef.current = viewer;
 
@@ -170,8 +160,8 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
         viewer.addLabel(a.elem, {
           position: { x: a.x, y: a.y, z: a.z },
           fontSize: 10,
-          fontColor: '#f8fafc',
-          backgroundColor: '#0f172a',
+          fontColor: '#0f172a',
+          backgroundColor: '#f8fafc',
           backgroundOpacity: 0.7,
         });
       }
@@ -215,24 +205,23 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
   };
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-xl overflow-hidden shadow-2xl flex flex-col">
+    <div className="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col">
       {/* Viewer Toolbar */}
-      <div className="bg-slate-950/80 p-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-slate-50 p-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
         {/* Left: Supercell & Render Style */}
         <div className="flex items-center gap-3 flex-wrap">
           {/* Supercell selector */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-            <Layers className="w-3.5 h-3.5 text-emerald-400" />
+          <div className="flex items-center gap-1.5 text-xs text-slate-600">
             <span>Supercell:</span>
-            <div className="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+            <div className="flex bg-white p-0.5 rounded-lg border border-slate-200">
               {(['1x1x1', '2x2x2', '3x3x3'] as SupercellDim[]).map((dim) => (
                 <button
                   key={dim}
                   onClick={() => setSupercell(dim)}
                   className={`px-2 py-0.5 rounded transition-all text-xs font-mono ${
                     supercell === dim
-                      ? 'bg-emerald-600 text-white font-medium'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-white text-slate-900 font-medium shadow-sm'
+                      : 'text-slate-600 hover:text-slate-800'
                   }`}
                 >
                   {dim}
@@ -242,10 +231,9 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
           </div>
 
           {/* Style switcher */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-            <Eye className="w-3.5 h-3.5 text-sky-400" />
+          <div className="flex items-center gap-1.5 text-xs text-slate-600">
             <span>Style:</span>
-            <div className="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+            <div className="flex bg-white p-0.5 rounded-lg border border-slate-200">
               {[
                 { id: 'ballAndStick', label: 'Ball & Stick' },
                 { id: 'spaceFilling', label: 'Space-Filling' },
@@ -256,8 +244,8 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
                   onClick={() => setStyle(s.id as RenderStyle)}
                   className={`px-2.5 py-0.5 rounded transition-all text-xs ${
                     style === s.id
-                      ? 'bg-slate-800 text-emerald-400 font-medium border border-emerald-500/30'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-white text-slate-900 font-medium border border-slate-300 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-800'
                   }`}
                 >
                   {s.label}
@@ -274,12 +262,11 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
             onClick={() => setShowPolyhedra(!showPolyhedra)}
             className={`px-2 py-1 rounded text-xs flex items-center gap-1 border transition-all ${
               showPolyhedra
-                ? 'bg-purple-950/70 text-purple-300 border-purple-800'
-                : 'bg-slate-900 text-slate-500 border-slate-800'
+                ? 'bg-purple-50 text-purple-700 border-purple-200'
+                : 'bg-white text-slate-500 border-slate-200'
             }`}
             title="Toggle Coordination Polyhedra / Bonds"
           >
-            <Sparkles className="w-3 h-3" />
             Polyhedra
           </button>
 
@@ -288,8 +275,8 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
             onClick={() => setShowUnitCell(!showUnitCell)}
             className={`px-2 py-1 rounded text-xs flex items-center gap-1 border transition-all ${
               showUnitCell
-                ? 'bg-emerald-950/70 text-emerald-300 border-emerald-800'
-                : 'bg-slate-900 text-slate-500 border-slate-800'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : 'bg-white text-slate-500 border-slate-200'
             }`}
             title="Toggle Unit Cell Bounding Box"
           >
@@ -302,8 +289,8 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
             onClick={() => setShowLabels(!showLabels)}
             className={`px-2 py-1 rounded text-xs flex items-center gap-1 border transition-all ${
               showLabels
-                ? 'bg-sky-950/70 text-sky-300 border-sky-800'
-                : 'bg-slate-900 text-slate-500 border-slate-800'
+                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                : 'bg-white text-slate-500 border-slate-200'
             }`}
             title="Toggle Element Labels"
           >
@@ -314,7 +301,7 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
           {/* Reset Camera */}
           <button
             onClick={handleResetCamera}
-            className="p-1.5 rounded bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+            className="p-1.5 rounded bg-white border border-slate-200 text-slate-600 hover:text-slate-800 transition-colors"
             title="Reset Camera View"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -323,32 +310,32 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
           {/* One-click CIF Download */}
           <button
             onClick={handleDownloadCif}
-            className="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-mono transition-colors shadow-sm"
+            className="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-mono transition-colors shadow-sm"
             title="Download Standardized .cif file"
           >
-            <Download className="w-3 h-3 text-emerald-400" />
+            <Download className="w-3 h-3 text-slate-900" />
             .CIF
           </button>
 
           {/* One-click POSCAR Download */}
           <button
             onClick={handleDownloadPoscar}
-            className="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-mono transition-colors shadow-sm"
+            className="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-mono transition-colors shadow-sm"
             title="Download VASP POSCAR file"
           >
-            <FileCode className="w-3 h-3 text-cyan-400" />
+            <FileCode className="w-3 h-3 text-blue-700" />
             POSCAR
           </button>
         </div>
       </div>
 
       {/* WebGL Canvas Container */}
-      <div className="relative w-full h-[450px] bg-slate-950">
+      <div className="relative w-full h-[450px] bg-slate-50">
         <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
 
         {/* Floating Crystallographic Overlay Pill */}
-        <div className="absolute bottom-3 left-3 bg-slate-900/85 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-800 text-[11px] text-slate-300 font-mono shadow-lg flex items-center gap-3">
-          <span className="flex items-center gap-1 text-emerald-400 font-semibold">
+        <div className="absolute bottom-3 left-3 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-[11px] text-slate-700 font-mono flex items-center gap-3">
+          <span className="flex items-center gap-1 text-slate-900 font-semibold">
             <Shield className="w-3.5 h-3.5" />
             {analysis.space_group.symbol} (#{analysis.space_group.number})
           </span>
