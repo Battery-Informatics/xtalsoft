@@ -108,7 +108,7 @@ class SearchLimits(BaseModel):
         description="Action on job failure: fail, keepTrying, replaceWithRandom, replaceWithOffspring"
     )
     soft_exit: bool = Field(
-        default=False,
+        default=True,
         description="Exit gracefully once max_num_structures are produced"
     )
     hard_exit: bool = Field(

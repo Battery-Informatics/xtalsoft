@@ -23,6 +23,16 @@ from ...config import settings
 logger = logging.getLogger(__name__)
 
 
+def to_wsl_path(path: Path) -> str:
+    """Convert a Windows Path to a WSL mount path (/mnt/<drive>/...)."""
+    resolved = path.resolve()
+    path_str = str(resolved).replace("\\", "/")
+    if len(path_str) >= 2 and path_str[1] == ":":
+        drive = path_str[0].lower()
+        return f"/mnt/{drive}{path_str[2:]}"
+    return path_str
+
+
 class ProcessState:
     """In-memory wrapper for a managed XtalOpt CLI subprocess."""
 
@@ -115,8 +125,15 @@ class XtalOptProcessManager:
             # Verify whether PID is still alive
             if state.status == "running" and state.pid:
                 if not psutil.pid_exists(state.pid):
-                    state.status = "completed" if state.exit_code == 0 else "failed"
-                    state.message = "Process exited previously."
+                    lwd_results = workspace_dir / "localWorkingDirectory" / "results.txt"
+                    has_results = lwd_results.is_file() and lwd_results.stat().st_size > 0
+                    if state.exit_code == 0 or (state.exit_code is None and has_results):
+                        state.status = "completed"
+                        state.exit_code = 0
+                        state.message = "Run completed successfully."
+                    else:
+                        state.status = "failed"
+                        state.message = "Process exited previously."
                     self._save_metadata(state)
 
             return state
@@ -156,14 +173,17 @@ class XtalOptProcessManager:
                 )
 
             # Ensure binary exists (or report descriptive error)
-            bin_path_str = str(self.bin_path)
             if not self.bin_path.is_file():
-                error_msg = (
-                    f"XtalOpt binary not found at '{bin_path_str}'. "
-                    f"Ensure XtalOpt is compiled or configure XTALOPT_BIN_PATH."
-                )
-                logger.error(error_msg)
-                raise FileNotFoundError(error_msg)
+                cand = settings.BASE_DIR / "xtalopt_latest" / "build" / "bin" / "xtalopt"
+                if cand.is_file():
+                    self.bin_path = cand
+                else:
+                    error_msg = (
+                        f"XtalOpt binary not found at '{self.bin_path}'. "
+                        f"Ensure XtalOpt is compiled or configure XTALOPT_BIN_PATH."
+                    )
+                    logger.error(error_msg)
+                    raise FileNotFoundError(error_msg)
 
             # Prepare stdout/stderr log files
             stdout_path = self._stdout_log_path(exp_id)
@@ -176,8 +196,13 @@ class XtalOptProcessManager:
             stdout_file.write(f"\n--- [XtalOpt Run Started: {now_iso}] ---\n")
             stdout_file.flush()
 
-            # Construct CLI command: xtalopt --cli --input xtalopt.in
-            cmd = [bin_path_str, "--cli", "--input", "xtalopt.in"]
+            # Construct CLI command: xtalopt --start -i xtalopt.in (line-buffered with stdbuf)
+            if os.name == "nt":
+                wsl_work = to_wsl_path(workspace_dir)
+                wsl_bin = to_wsl_path(self.bin_path)
+                cmd = ["wsl", "bash", "-c", f"cd '{wsl_work}' && stdbuf -oL -eL '{wsl_bin}' --start -i xtalopt.in"]
+            else:
+                cmd = ["stdbuf", "-oL", "-eL", str(self.bin_path), "--start", "-i", "xtalopt.in"]
             if custom_args:
                 cmd.extend(custom_args)
 
@@ -188,7 +213,6 @@ class XtalOptProcessManager:
                     stdout=stdout_file,
                     stderr=stderr_file,
                     shell=False,
-                    preexec_fn=os.setsid if hasattr(os, "setsid") else None,
                 )
             except Exception as e:
                 stdout_file.close()
@@ -261,15 +285,28 @@ class XtalOptProcessManager:
                     except psutil.NoSuchProcess:
                         pass
 
-                state.status = "stopped"
+                if os.name == "nt":
+                    try:
+                        subprocess.run(["wsl", "pkill", "-f", "xtalopt"], capture_output=True)
+                    except Exception:
+                        pass
+
+                lwd_results = state.workspace_dir / "localWorkingDirectory" / "results.txt"
+                has_results = lwd_results.is_file() and lwd_results.stat().st_size > 0
+
+                state.status = "completed" if has_results else "stopped"
+                state.exit_code = 0 if has_results else state.exit_code
                 state.end_time = datetime.now(timezone.utc)
-                state.message = f"Process {pid} successfully stopped."
+                state.message = f"Process {pid} completed and stopped." if has_results else f"Process {pid} successfully stopped."
                 self._save_metadata(state)
 
             except psutil.NoSuchProcess:
-                state.status = "stopped"
+                lwd_results = state.workspace_dir / "localWorkingDirectory" / "results.txt"
+                has_results = lwd_results.is_file() and lwd_results.stat().st_size > 0
+                state.status = "completed" if has_results else "stopped"
+                state.exit_code = 0 if has_results else state.exit_code
                 state.end_time = datetime.now(timezone.utc)
-                state.message = f"Process {pid} had already finished."
+                state.message = f"Process {pid} had finished." if has_results else f"Process {pid} had already finished."
                 self._save_metadata(state)
             except Exception as e:
                 logger.error("Error stopping run %s (PID %s): %s", exp_id, pid, e)
@@ -314,10 +351,18 @@ class XtalOptProcessManager:
                 self._save_metadata(state)
         elif state.status == "running" and state.pid:
             if not psutil.pid_exists(state.pid):
-                state.status = "completed" if state.exit_code == 0 else "failed"
+                # Process has ended. Check if structures were generated
+                lwd_results = state.workspace_dir / "localWorkingDirectory" / "results.txt"
+                has_results = lwd_results.is_file() and lwd_results.stat().st_size > 0
+
+                if state.exit_code == 0 or (state.exit_code is None and has_results):
+                    state.status = "completed"
+                    state.message = "Run completed successfully."
+                else:
+                    state.status = "failed"
+                    state.message = f"Process exited with code {state.exit_code}."
                 if not state.end_time:
                     state.end_time = datetime.now(timezone.utc)
-                state.message = "Process exited."
                 self._save_metadata(state)
 
         elapsed = None

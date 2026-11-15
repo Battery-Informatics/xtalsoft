@@ -7,9 +7,13 @@ Provides endpoints for:
 - Structure inspection and CIF generation
 """
 
+import json
+import logging
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, HTTPException, Query, status
+
+logger = logging.getLogger(__name__)
 
 from ..schemas.config_schema import XtalOptExperimentConfig
 from ..schemas.preset_schema import (
@@ -148,7 +152,18 @@ def create_experiment(payload: ExperimentCreateRequest):
                 started = (run_res.status == "running")
                 start_message = run_res.message
                 pid = run_res.pid
+                if started:
+                    meta_file = settings.RUNS_DIR / exp_id / "meta.json"
+                    if meta_file.is_file():
+                        try:
+                            m_data = json.loads(meta_file.read_text(encoding="utf-8"))
+                            m_data["status"] = "running"
+                            m_data["pid"] = pid
+                            meta_file.write_text(json.dumps(m_data, indent=2), encoding="utf-8")
+                        except Exception:
+                            pass
             except Exception as ex:
+                logger.error("Failed to start run %s: %s", exp_id, ex)
                 start_message = f"Workspace created, but subprocess could not start: {ex}"
 
         return {
@@ -175,7 +190,16 @@ def create_experiment(payload: ExperimentCreateRequest):
 )
 def list_experiments():
     """List all experiment runs discovered from runs/*/meta.json."""
-    return run_store.list_experiments()
+    items = run_store.list_experiments()
+    for item in items:
+        try:
+            st = process_manager.get_run_status(item.exp_id)
+            if st.status not in ("idle", "unknown"):
+                item.status = st.status
+                item.pid = st.pid
+        except Exception:
+            pass
+    return items
 
 
 @router.get(
@@ -287,12 +311,15 @@ def get_experiment_structures(
 ):
     """Parse all relaxed structures in localWorkingDirectory and return metadata + CIFs."""
     exp_dir = settings.RUNS_DIR / exp_id
+    if not exp_dir.is_dir() and (settings.BASE_DIR / exp_id).is_dir():
+        exp_dir = settings.BASE_DIR / exp_id
+
     if not exp_dir.is_dir():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Experiment directory {exp_id} does not exist.",
         )
-    return parse_experiment_structures(exp_id=exp_id, symprec=symprec)
+    return parse_experiment_structures(exp_id=exp_id, base_runs_dir=exp_dir.parent, symprec=symprec)
 
 
 @router.get(
@@ -307,11 +334,20 @@ def get_single_structure(
 ):
     """Retrieve full metadata and standardized CIF for a specific structure tag (e.g. '1x1')."""
     exp_dir = settings.RUNS_DIR / exp_id
-    work_dir = exp_dir / "localWorkingDirectory"
+    if not exp_dir.is_dir() and (settings.BASE_DIR / exp_id).is_dir():
+        exp_dir = settings.BASE_DIR / exp_id
+
+    if (exp_dir / "localWorkingDirectory").is_dir():
+        work_dir = exp_dir / "localWorkingDirectory"
+    elif exp_dir.is_dir():
+        work_dir = exp_dir
+    else:
+        work_dir = exp_dir / "localWorkingDirectory"
+
     if not work_dir.is_dir():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No localWorkingDirectory found for experiment {exp_id}.",
+            detail=f"No working directory found for experiment {exp_id}.",
         )
 
     # Convert tag e.g. "1x1" to directory format "00001x00001" or search match
