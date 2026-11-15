@@ -56,6 +56,14 @@ class Settings(BaseSettings):
         )
     )
 
+    # Directory where reusable JSON presets are stored
+    PRESETS_DIR: Path = Path(
+        os.getenv(
+            "PRESETS_DIR",
+            str(BASE_DIR / "presets")
+        )
+    )
+
     # Subprocess execution timeout in seconds (default: none / unlimited for EA search)
     DEFAULT_RUN_TIMEOUT_SECONDS: Optional[int] = None
 
@@ -69,6 +77,8 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Ensure runs directory exists
+# Ensure runs and presets directories exist
 settings.RUNS_DIR.mkdir(parents=True, exist_ok=True)
+settings.PRESETS_DIR.mkdir(parents=True, exist_ok=True)
+
 

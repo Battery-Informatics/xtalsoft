@@ -1,7 +1,7 @@
-"""Pydantic schemas for run lifecycle, execution status, and logs."""
+"""Pydantic schemas for experiments and run lifecycle."""
 
 from datetime import datetime
-from typing import Optional, List, Any
+from typing import Optional, List, Dict, Any
 
 try:
     from pydantic import BaseModel, Field
@@ -25,26 +25,51 @@ except ImportError:
                     res[k] = v
             return res
 
-    def Field(default=None, default_factory=None, description=None, **kwargs) -> Any:  # type: ignore
+    def Field(default=None, default_factory=None, description=None, **kwargs):  # type: ignore
         if default_factory is not None:
             return default_factory()
         return default
 
 
+class ExperimentCreateRequest(BaseModel):
+    """Payload to create and launch an experiment run."""
+    exp_id: Optional[str] = Field(default=None, description="Unique alphanumeric identifier (auto-generated if omitted)")
+    name: Optional[str] = Field(default=None, description="Human readable label for the experiment")
+    description: Optional[str] = Field(default="", description="Experiment notes or description")
+    chemicalFormulas: str = Field(..., description="Chemical formula range e.g. 'Ti2O4 - Ti4O8'")
+    minAtoms: int = Field(default=1, description="Minimum number of atoms")
+    maxAtoms: int = Field(default=20, description="Maximum number of atoms")
+    numInitial: int = Field(default=20, description="Initial random structures")
+    parentsPoolSize: int = Field(default=20, description="Parents pool size")
+    maxNumStructures: int = Field(default=100, description="Max structures to produce")
+    optimizer: str = Field(default="gulp", description="Optimizer engine")
+    directRunCommand: str = Field(default="gulp", description="Direct run command")
+    ginTemplate: str = Field(..., description="GULP template text")
+    referenceEnergies: Optional[str] = Field(default=None, description="Reference energies for VC search")
+    start_immediately: bool = Field(default=False, description="Whether to spawn ./bin/xtalopt --cli immediately")
+
+
+class ExperimentItem(BaseModel):
+    """Summary of an experiment run loaded from runs/<exp_id>/meta.json."""
+    exp_id: str
+    name: str
+    status: str
+    pid: Optional[int] = None
+    created_at: Optional[str] = None
+    chemicalFormulas: Optional[str] = None
+    optimizer: Optional[str] = None
+    config: Optional[Dict[str, Any]] = None
+
+
 class RunCreateRequest(BaseModel):
     """Request payload to create a new experiment workspace and configure it."""
-
     exp_id: str = Field(..., description="Unique alphanumeric identifier for the experiment run")
 
 
 class RunStatusResponse(BaseModel):
     """Process execution status response."""
-
     exp_id: str
-    status: str = Field(
-        ...,
-        description="Status: idle, running, completed, failed, stopped"
-    )
+    status: str = Field(..., description="Status: idle, running, completed, failed, stopped")
     pid: Optional[int] = Field(default=None, description="System process ID")
     exit_code: Optional[int] = Field(default=None, description="Process exit code if finished")
     start_time: Optional[datetime] = None
@@ -55,7 +80,6 @@ class RunStatusResponse(BaseModel):
 
 class RunLogsResponse(BaseModel):
     """Stdout and Stderr logs captured for an experiment run."""
-
     exp_id: str
     stdout_lines: List[str]
     stderr_lines: List[str]

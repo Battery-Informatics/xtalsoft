@@ -1,20 +1,38 @@
 """API routes for XtalOpt Web Workbench.
 
-Provides endpoints for workspace initialization, CLI process controls,
-log streaming, and crystal structure inspection.
+Provides endpoints for:
+- Preset management (presets/*.json)
+- Experiment runs lifecycle and metadata (runs/<exp_id>/meta.json)
+- Subprocess controls and logging
+- Structure inspection and CIF generation
 """
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, HTTPException, Query, status
 
 from ..schemas.config_schema import XtalOptExperimentConfig
-from ..schemas.run_schema import RunStatusResponse, RunLogsResponse
+from ..schemas.preset_schema import (
+    PresetCreate,
+    PresetUpdate,
+    PresetResponse,
+)
+from ..schemas.run_schema import (
+    ExperimentCreateRequest,
+    ExperimentItem,
+    RunStatusResponse,
+    RunLogsResponse,
+)
 from ..schemas.structure_schema import (
     ParsedStructure,
     ExperimentStructuresSummary,
 )
-from ..services.config_generator import create_experiment_workspace
+from ..services.config_generator import (
+    create_experiment_workspace,
+    generate_xtalopt_in_content,
+)
+from ..services.preset_store import preset_store
+from ..services.run_store import run_store
 from ..services.process_manager import process_manager
 from ..services.structure_parser import (
     parse_experiment_structures,
@@ -25,11 +43,16 @@ from ...config import settings
 router = APIRouter()
 
 
+# ==============================================================================
+# System Health
+# ==============================================================================
+
 @router.get("/health", tags=["System"])
 def health_check():
     """Verify backend system status and path configurations."""
     bin_exists = settings.XTALOPT_BIN_PATH.is_file()
     runs_dir_exists = settings.RUNS_DIR.is_dir()
+    presets_dir_exists = settings.PRESETS_DIR.is_dir()
     return {
         "status": "online",
         "version": settings.VERSION,
@@ -37,35 +60,169 @@ def health_check():
         "xtalopt_bin_found": bin_exists,
         "runs_dir": str(settings.RUNS_DIR),
         "runs_dir_found": runs_dir_exists,
+        "presets_dir": str(settings.PRESETS_DIR),
+        "presets_dir_found": presets_dir_exists,
     }
 
 
-@router.post(
-    "/experiments/{exp_id}/generate",
-    status_code=status.HTTP_201_CREATED,
-    tags=["Experiment Configuration"],
-)
-def generate_experiment_workspace(
-    exp_id: str,
-    config: XtalOptExperimentConfig,
-):
-    """Generate isolated runs/<exp_id>/ workspace with xtalopt.in and GULP template."""
+# ==============================================================================
+# Presets API (presets/*.json)
+# ==============================================================================
+
+@router.get("/presets", response_model=List[PresetResponse], tags=["Presets"])
+def list_presets():
+    """List all saved experiment presets from presets/*.json."""
+    return preset_store.list_presets()
+
+
+@router.post("/presets", response_model=PresetResponse, status_code=status.HTTP_201_CREATED, tags=["Presets"])
+def create_preset(payload: PresetCreate):
+    """Save a new experiment preset as a JSON file in presets/."""
     try:
-        exp_dir = create_experiment_workspace(exp_id=exp_id, config=config)
+        return preset_store.create_preset(payload)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to save preset: {e}",
+        )
+
+
+@router.get("/presets/{preset_id}", response_model=PresetResponse, tags=["Presets"])
+def get_preset(preset_id: str):
+    """Get a specific preset by its slug ID."""
+    preset = preset_store.get_preset(preset_id)
+    if not preset:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Preset not found")
+    return preset
+
+
+@router.put("/presets/{preset_id}", response_model=PresetResponse, tags=["Presets"])
+def update_preset(preset_id: str, payload: PresetUpdate):
+    """Update an existing preset JSON file."""
+    updated = preset_store.update_preset(preset_id, payload)
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Preset not found")
+    return updated
+
+
+@router.delete("/presets/{preset_id}", tags=["Presets"])
+def delete_preset(preset_id: str):
+    """Delete a preset JSON file."""
+    deleted = preset_store.delete_preset(preset_id)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Preset not found")
+    return {"message": f"Preset '{preset_id}' deleted successfully", "id": preset_id}
+
+
+@router.post("/presets/{preset_id}/clone", response_model=PresetResponse, status_code=status.HTTP_201_CREATED, tags=["Presets"])
+def clone_preset(preset_id: str):
+    """Clone an existing preset into a new copy JSON file."""
+    cloned = preset_store.clone_preset(preset_id)
+    if not cloned:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Preset not found to clone")
+    return cloned
+
+
+# ==============================================================================
+# Experiments API (runs/<exp_id>/meta.json + xtalopt.in)
+# ==============================================================================
+
+@router.post(
+    "/experiments",
+    status_code=status.HTTP_201_CREATED,
+    tags=["Experiments"],
+)
+def create_experiment(payload: ExperimentCreateRequest):
+    """Create runs/<exp_id>/, write meta.json, xtalopt.in, gin1, and optionally launch ./bin/xtalopt --cli."""
+    try:
+        meta_data = run_store.create_experiment(payload)
+        exp_id = meta_data["exp_id"]
+
+        started = False
+        start_message = None
+        pid = None
+
+        if payload.start_immediately:
+            try:
+                run_res = process_manager.start_run(exp_id=exp_id)
+                started = (run_res.status == "running")
+                start_message = run_res.message
+                pid = run_res.pid
+            except Exception as ex:
+                start_message = f"Workspace created, but subprocess could not start: {ex}"
+
         return {
-            "message": f"Successfully generated experiment workspace for {exp_id}",
+            "message": "Experiment created successfully",
             "exp_id": exp_id,
-            "workspace_dir": str(exp_dir),
-            "xtalopt_in_path": str(exp_dir / "xtalopt.in"),
-            "gulp_template_path": str(exp_dir / "templates" / "gulp" / "gin1"),
-            "local_working_dir": str(exp_dir / "localWorkingDirectory"),
+            "name": meta_data["name"],
+            "status": "running" if started else "idle",
+            "pid": pid,
+            "started": started,
+            "start_message": start_message,
+            "created_at": meta_data["created_at"],
         }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate experiment workspace: {e}",
+            detail=f"Failed to create experiment: {e}",
         )
 
+
+@router.get(
+    "/experiments",
+    response_model=List[ExperimentItem],
+    tags=["Experiments"],
+)
+def list_experiments():
+    """List all experiment runs discovered from runs/*/meta.json."""
+    return run_store.list_experiments()
+
+
+@router.get(
+    "/experiments/{exp_id}",
+    tags=["Experiments"],
+)
+def get_experiment_details(exp_id: str):
+    """Get metadata and configuration snapshot for an experiment."""
+    meta = run_store.get_experiment(exp_id)
+    if not meta:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Experiment '{exp_id}' not found")
+    
+    # Check live status from process manager
+    live_status = process_manager.get_run_status(exp_id)
+    meta["live_status"] = live_status.model_dump()
+    return meta
+
+
+@router.post(
+    "/experiments/{exp_id}/stop",
+    response_model=RunStatusResponse,
+    tags=["Experiments"],
+)
+def stop_experiment_run(exp_id: str, timeout: int = Query(5, ge=1, le=30)):
+    """Stop/kill active ./bin/xtalopt --cli process for this experiment."""
+    try:
+        return process_manager.stop_run(exp_id=exp_id, timeout=timeout)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.post(
+    "/experiments/preview-xtalopt-in",
+    tags=["Experiments"],
+)
+def preview_xtalopt_in(config: XtalOptExperimentConfig):
+    """Generate and return in-memory live preview of xtalopt.in text."""
+    try:
+        content = generate_xtalopt_in_content(config)
+        return {"content": content}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+# ==============================================================================
+# Subprocess Runs & Logs
+# ==============================================================================
 
 @router.post(
     "/runs/{exp_id}/start",
@@ -114,6 +271,10 @@ def get_run_logs(exp_id: str, tail: int = Query(200, ge=1, le=5000)):
     """Retrieve captured stdout and stderr execution logs."""
     return process_manager.get_run_logs(exp_id=exp_id, tail=tail)
 
+
+# ==============================================================================
+# Crystal Structure Visualizer & Results
+# ==============================================================================
 
 @router.get(
     "/runs/{exp_id}/structures",
@@ -186,4 +347,3 @@ def get_single_structure(
         )
 
     return parsed
-

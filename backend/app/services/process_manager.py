@@ -55,7 +55,7 @@ class XtalOptProcessManager:
         self._lock = threading.Lock()
 
     def _metadata_path(self, exp_id: str) -> Path:
-        return self.runs_dir / exp_id / "run_metadata.json"
+        return self.runs_dir / exp_id / "meta.json"
 
     def _stdout_log_path(self, exp_id: str) -> Path:
         return self.runs_dir / exp_id / "stdout.log"
@@ -64,9 +64,16 @@ class XtalOptProcessManager:
         return self.runs_dir / exp_id / "stderr.log"
 
     def _save_metadata(self, state: ProcessState) -> None:
-        """Persist process execution metadata to run_metadata.json."""
+        """Persist process execution metadata to meta.json."""
         path = self._metadata_path(state.exp_id)
-        data = {
+        data = {}
+        if path.is_file():
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                data = {}
+
+        data.update({
             "exp_id": state.exp_id,
             "status": state.status,
             "pid": state.pid,
@@ -74,7 +81,7 @@ class XtalOptProcessManager:
             "start_time": state.start_time.isoformat() if state.start_time else None,
             "end_time": state.end_time.isoformat() if state.end_time else None,
             "message": state.message,
-        }
+        })
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(data, indent=2), encoding="utf-8")

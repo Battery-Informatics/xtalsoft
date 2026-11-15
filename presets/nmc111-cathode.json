@@ -1,0 +1,17 @@
+{
+  "id": "nmc111-cathode",
+  "name": "Li3NiMnCoO6 (NMC111) Cathode",
+  "description": "Layered lithium nickel manganese cobalt oxide cathode material for lithium-ion battery research.",
+  "chemicalFormulas": "Li3Ni1Mn1Co1O6",
+  "minAtoms": 12,
+  "maxAtoms": 24,
+  "numInitial": 20,
+  "popSize": 20,
+  "maxNumStructures": 100,
+  "optimizer": "gulp",
+  "directRunCommand": "gulp",
+  "ginTemplate": "opti conj conp\nswitch_minimiser bfgs gnorm 0.5\ncell\n  %a% %b% %c% %alphaDeg% %betaDeg% %gammaDeg%\nfrac\n%coordsFrac%\nspecies\nLi 1.000\nNi 2.000\nMn 4.000\nCo 3.000\nO -2.000\nbuck\n# Buckingham potential parameters for battery cathode materials\nLi O  426.48   0.3000   0.00   12.0\nNi O  1392.30  0.3030   0.00   12.0\nMn O  1267.50  0.3214   0.00   12.0\nCo O  1329.80  0.3087   0.00   12.0\nO  O  22764.0  0.1490  27.88   12.0\nlennard 12 6\nLi Li 1.0 0.0 12.0\nNi Ni 1.0 0.0 12.0\nMn Mn 1.0 0.0 12.0\nCo Co 1.0 0.0 12.0\nO  O  1.0 0.0 12.0\n",
+  "referenceEnergies": null,
+  "created_at": "2026-01-01T00:00:00Z",
+  "updated_at": "2026-01-01T00:00:00Z"
+}
