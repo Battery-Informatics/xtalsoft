@@ -27,6 +27,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 class Settings(BaseSettings):
     """Application settings with environment variable overrides."""
 
+    BASE_DIR: Path = BASE_DIR
+
     # Application info
     PROJECT_NAME: str = "XtalOpt Web Workbench"
     VERSION: str = "0.1.0"
