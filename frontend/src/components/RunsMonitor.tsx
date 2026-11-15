@@ -28,15 +28,18 @@ import type {
 import { ConvergencePlot } from './ConvergencePlot';
 import { CandidateTable } from './CandidateTable';
 import { TerminalLogDrawer } from './TerminalLogDrawer';
+import { CrystalBatteryAnalyzer } from './CrystalBatteryAnalyzer';
 
 interface RunsMonitorProps {
   selectedExpId?: string | null;
   onOpenStudio?: () => void;
+  onOpenAnalyzer?: (expId: string, structId: string) => void;
 }
 
 export const RunsMonitor: React.FC<RunsMonitorProps> = ({
   selectedExpId: initialSelectedId,
   onOpenStudio,
+  onOpenAnalyzer,
 }) => {
   const [experiments, setExperiments] = useState<ExperimentItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId || null);
@@ -48,6 +51,7 @@ export const RunsMonitor: React.FC<RunsMonitorProps> = ({
   const [structures, setStructures] = useState<ParsedStructure[]>([]);
   const [selectedStructure, setSelectedStructure] = useState<ParsedStructure | null>(null);
   const [structuresLoading, setStructuresLoading] = useState<boolean>(false);
+  const [isAnalyzerOpen, setIsAnalyzerOpen] = useState<boolean>(false);
 
   // Load experiments list
   const loadExperiments = useCallback(async () => {
@@ -458,9 +462,19 @@ export const RunsMonitor: React.FC<RunsMonitorProps> = ({
             </div>
 
             <div className="text-right shrink-0">
-              <span className="text-[11px] bg-slate-800 text-slate-400 px-2.5 py-1 rounded-md border border-slate-700">
-                Ready for 3D Visualizer & XRD (Part 4)
-              </span>
+              <button
+                onClick={() => {
+                  if (onOpenAnalyzer && selectedId && selectedStructure) {
+                    onOpenAnalyzer(selectedId, selectedStructure.tag);
+                  }
+                  setIsAnalyzerOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-950/50 transition-all cursor-pointer"
+                title="Launch 3D Crystal Visualizer, Powder XRD & Battery Metrics"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                3D Crystal & Battery Analyzer
+              </button>
             </div>
           </div>
         )}
@@ -470,8 +484,28 @@ export const RunsMonitor: React.FC<RunsMonitorProps> = ({
           structures={structures}
           selectedTag={selectedStructure?.tag}
           onSelectStructure={(struct) => setSelectedStructure(struct)}
+          onAnalyzeStructure={(struct) => {
+            setSelectedStructure(struct);
+            if (onOpenAnalyzer && selectedId) {
+              onOpenAnalyzer(selectedId, struct.tag);
+            }
+            setIsAnalyzerOpen(true);
+          }}
         />
       </div>
+
+      {/* Interactive 3D Crystal & Battery Analyzer Modal Overlay */}
+      {isAnalyzerOpen && selectedStructure && selectedId && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md p-4 sm:p-6 lg:p-8 overflow-y-auto flex items-start justify-center">
+          <div className="max-w-6xl w-full my-6">
+            <CrystalBatteryAnalyzer
+              expId={selectedId}
+              structId={selectedStructure.tag}
+              onClose={() => setIsAnalyzerOpen(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Collapsible Live Execution Terminal Drawer */}
       <TerminalLogDrawer

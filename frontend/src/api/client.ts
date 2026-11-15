@@ -5,6 +5,7 @@ import type {
   ExperimentTelemetry,
   ExperimentStructuresSummary,
   ParsedStructure,
+  StructureAnalysisResult,
 } from '../types';
 
 export const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -262,3 +263,23 @@ export function subscribeExperimentTelemetry(
     }
   };
 }
+
+// =============================================================================
+// Part 4: Crystal & Battery Analysis API
+// =============================================================================
+
+export async function fetchStructureAnalysis(
+  expId: string,
+  structId: string,
+  symprec: number = 0.01
+): Promise<StructureAnalysisResult> {
+  const res = await fetch(
+    `${API_BASE}/api/experiments/${expId}/structures/${structId}/analysis?symprec=${symprec}`
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch analysis for structure ${structId}`);
+  }
+  return res.json();
+}
+

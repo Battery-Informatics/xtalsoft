@@ -37,6 +37,7 @@ from ..schemas.telemetry_schema import (
     ExperimentTelemetry,
     PopulationBreakdown,
 )
+from ..schemas.analysis_schema import StructureAnalysisResult
 from ..services.config_generator import (
     create_experiment_workspace,
     generate_xtalopt_in_content,
@@ -49,6 +50,7 @@ from ..services.structure_parser import (
     parse_structure_folder,
 )
 from ..services.telemetry_service import get_experiment_telemetry
+from ..services.battery_analyzer import analyze_structure_comprehensive
 from ...config import settings
 
 router = APIRouter()
@@ -487,3 +489,47 @@ def get_single_structure(
         )
 
     return parsed
+
+
+@router.get(
+    "/experiments/{exp_id}/structures/{tag}",
+    response_model=ParsedStructure,
+    tags=["Structure Visualizer & Parser"],
+)
+def get_single_structure_alias(
+    exp_id: str,
+    tag: str,
+    symprec: float = Query(0.01, ge=0.0001, le=0.5),
+):
+    """Retrieve full metadata and standardized CIF for a specific structure tag."""
+    return get_single_structure(exp_id=exp_id, tag=tag, symprec=symprec)
+
+
+# ==============================================================================
+# Crystallography & Battery Post-Processing API (Part 4)
+# ==============================================================================
+
+@router.get(
+    "/experiments/{exp_id}/structures/{struct_id}/analysis",
+    response_model=StructureAnalysisResult,
+    tags=["Battery & XRD Analyzer (Part 4)"],
+)
+@router.get(
+    "/runs/{exp_id}/structures/{struct_id}/analysis",
+    response_model=StructureAnalysisResult,
+    tags=["Battery & XRD Analyzer (Part 4)"],
+)
+def get_structure_analysis(
+    exp_id: str,
+    struct_id: str,
+    symprec: float = Query(0.01, ge=0.0001, le=0.5, description="Spglib symmetry tolerance"),
+):
+    """Compute crystallography, nearest-neighbor coordination, powder XRD, and theoretical capacity."""
+    result = analyze_structure_comprehensive(exp_id=exp_id, struct_id=struct_id, symprec=symprec)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Structure '{struct_id}' in experiment '{exp_id}' not found or could not be parsed.",
+        )
+    return result
+

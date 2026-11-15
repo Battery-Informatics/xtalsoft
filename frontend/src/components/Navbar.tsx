@@ -1,9 +1,9 @@
 import React from 'react';
-import { Layers, Bookmark, Activity, Cpu } from 'lucide-react';
+import { Layers, Bookmark, Activity, Cpu, Sparkles } from 'lucide-react';
 
 interface NavbarProps {
-  currentTab: 'studio' | 'presets' | 'runs';
-  setCurrentTab: (tab: 'studio' | 'presets' | 'runs') => void;
+  currentTab: 'studio' | 'presets' | 'runs' | 'analyzer';
+  setCurrentTab: (tab: 'studio' | 'presets' | 'runs' | 'analyzer') => void;
   backendOnline: boolean | null;
 }
 
@@ -62,6 +62,17 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab, backe
           >
             <Activity className="w-4 h-4" />
             Runs & Monitor
+          </button>
+          <button
+            onClick={() => setCurrentTab('analyzer')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              currentTab === 'analyzer'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-semibold'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-emerald-400" />
+            Crystal & Battery Analyzer
           </button>
         </nav>
 

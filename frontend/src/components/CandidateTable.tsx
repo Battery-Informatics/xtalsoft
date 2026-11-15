@@ -18,6 +18,7 @@ interface CandidateTableProps {
   structures: ParsedStructure[];
   selectedTag?: string | null;
   onSelectStructure: (structure: ParsedStructure) => void;
+  onAnalyzeStructure?: (structure: ParsedStructure) => void;
 }
 
 type SortField =
@@ -35,6 +36,7 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
   structures,
   selectedTag,
   onSelectStructure,
+  onAnalyzeStructure,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -254,6 +256,7 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
                 Status {renderSortIcon('status')}
               </th>
               <th className="py-2.5 px-3">Parent Lineage</th>
+              <th className="py-2.5 px-3 text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
@@ -323,6 +326,21 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
                         </span>
                       ) : (
                         <span className="text-slate-600 italic">initial</span>
+                      )}
+                    </td>
+                    <td className="py-2 px-3 text-right">
+                      {onAnalyzeStructure && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectStructure(s);
+                            onAnalyzeStructure(s);
+                          }}
+                          className="px-2 py-0.5 rounded bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-800 text-[11px] font-medium transition-colors shadow-sm"
+                          title="Open in 3D Crystal & Battery Analyzer"
+                        >
+                          Analyze
+                        </button>
                       )}
                     </td>
                   </tr>

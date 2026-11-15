@@ -32,6 +32,13 @@ from .telemetry_schema import (
     PopulationBreakdown,
     ExperimentTelemetry,
 )
+from .analysis_schema import (
+    BondLengthStats,
+    CoordinationSite,
+    XRDPak,
+    BatteryMetrics,
+    StructureAnalysisResult,
+)
 
 __all__ = [
     "XtalOptExperimentConfig",
@@ -58,4 +65,9 @@ __all__ = [
     "PresetResponse",
     "PopulationBreakdown",
     "ExperimentTelemetry",
+    "BondLengthStats",
+    "CoordinationSite",
+    "XRDPak",
+    "BatteryMetrics",
+    "StructureAnalysisResult",
 ]
