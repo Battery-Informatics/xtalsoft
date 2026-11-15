@@ -41,5 +41,29 @@ localWorkingDirectory/
 .env
 .env.local
 
-# Upstream XtalOpt repository clone
+# Upstream XtalOpt & GULP builds/clones
 XtalOpt/
+xtalopt_latest/
+gulp*/
+gulp-6.4/
+
+# Local search results, datasets & temporary archives
+res/
+res.zip
+*.zip
+*.tar.gz
+*.tar
+--version.*
+*.gin
+*.gout
+
+# Frontend dependencies and production builds
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+node_modules/
+dist/
+
+# IDE / Editor configuration
+.vscode/
+.idea/

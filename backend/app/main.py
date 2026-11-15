@@ -2,10 +2,13 @@
 
 from contextlib import asynccontextmanager
 import logging
-from fastapi import FastAPI
+import json
+import asyncio
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api.routes import router as api_router
+from .services.telemetry_service import get_experiment_telemetry
 from ..config import settings
 
 # Configure logging
@@ -56,4 +59,23 @@ def root():
         "docs_url": "/docs",
         "health_check": f"{settings.API_V1_STR}/health",
     }
+
+
+@app.websocket("/ws/experiments/{exp_id}")
+async def root_websocket_experiment_telemetry(websocket: WebSocket, exp_id: str):
+    """Root WebSocket stream emitting real-time telemetry updates."""
+    await websocket.accept()
+    try:
+        while True:
+            try:
+                data = get_experiment_telemetry(exp_id)
+                await websocket.send_text(json.dumps(data))
+            except Exception as e:
+                logger.error("Error generating telemetry for WS %s: %s", exp_id, e)
+            await asyncio.sleep(2)
+    except WebSocketDisconnect:
+        logger.info("Root WebSocket client disconnected for experiment %s", exp_id)
+    except Exception as e:
+        logger.warning("Root WebSocket error for %s: %s", exp_id, e)
+
 

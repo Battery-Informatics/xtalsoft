@@ -1,84 +1,58 @@
 import React from 'react';
-import { Layers, Bookmark, Activity, Cpu } from 'lucide-react';
+
+type Tab = 'studio' | 'presets' | 'runs' | 'analyzer';
 
 interface NavbarProps {
-  currentTab: 'studio' | 'presets' | 'runs';
-  setCurrentTab: (tab: 'studio' | 'presets' | 'runs') => void;
+  currentTab: Tab;
+  setCurrentTab: (tab: Tab) => void;
   backendOnline: boolean | null;
 }
 
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'studio', label: 'Experiment Studio' },
+  { id: 'presets', label: 'Presets' },
+  { id: 'runs', label: 'Runs' },
+  { id: 'analyzer', label: 'Structure Analysis' },
+];
+
 export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab, backendOnline }) => {
+  const status =
+    backendOnline === true
+      ? { dot: 'bg-emerald-700', label: 'Backend connected' }
+      : backendOnline === false
+      ? { dot: 'bg-red-700', label: 'Backend offline' }
+      : { dot: 'bg-slate-400', label: 'Connecting' };
+
   return (
-    <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="bg-gradient-to-tr from-cyan-500 to-blue-600 p-2 rounded-lg text-white shadow-lg shadow-cyan-500/20">
-            <Cpu className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-                XtalOpt Workbench
-              </span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800/60">
-                v15 Engine
-              </span>
-            </div>
-            <p className="text-xs text-slate-400">Battery Materials EA Crystal Visualizer</p>
-          </div>
-        </div>
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-slate-50/95 backdrop-blur">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-1 py-3 md:h-16 md:py-0">
+          <span className="text-[17px] font-semibold text-slate-900">XtalOpt Workbench</span>
 
-        {/* Navigation Tabs */}
-        <nav className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
-          <button
-            onClick={() => setCurrentTab('studio')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              currentTab === 'studio'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <Layers className="w-4 h-4" />
-            Experiment Studio
-          </button>
-          <button
-            onClick={() => setCurrentTab('presets')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              currentTab === 'presets'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <Bookmark className="w-4 h-4" />
-            Saved Presets
-          </button>
-          <button
-            onClick={() => setCurrentTab('runs')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              currentTab === 'runs'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <Activity className="w-4 h-4" />
-            Runs & Monitor
-          </button>
-        </nav>
+          <div className="order-last md:order-none w-full md:w-auto -mx-1 flex items-center overflow-x-auto [scrollbar-width:none]">
+            <nav className="flex items-center" aria-label="Sections">
+              {TABS.map((t) => {
+                const active = currentTab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setCurrentTab(t.id)}
+                    aria-current={active ? 'page' : undefined}
+                    className={`whitespace-nowrap px-3 py-2 text-sm font-medium transition-colors ${
+                      active ? 'text-blue-700' : 'text-slate-900 hover:text-blue-700'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
 
-        {/* Backend Status indicator */}
-        <div className="flex items-center gap-2 text-xs font-mono">
-          <span
-            className={`w-2.5 h-2.5 rounded-full ${
-              backendOnline === true
-                ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
-                : backendOnline === false
-                ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]'
-                : 'bg-amber-400 animate-pulse'
-            }`}
-          />
-          <span className="text-slate-400">
-            {backendOnline === true ? 'Backend Connected' : backendOnline === false ? 'Backend Offline' : 'Connecting...'}
-          </span>
+          <div className="flex items-center gap-2 text-xs text-slate-500" title={status.label}>
+            <span className={`h-2 w-2 rounded-full ${status.dot}`} />
+            <span className="hidden sm:inline">{status.label}</span>
+          </div>
         </div>
       </div>
     </header>

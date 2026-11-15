@@ -116,8 +116,12 @@ class PresetStore:
     """Manages file-based preset templates in presets/*.json."""
 
     def __init__(self, presets_dir: Optional[Path] = None):
-        self.presets_dir = presets_dir or settings.PRESETS_DIR
+        self._presets_dir = presets_dir
         self.ensure_seeded()
+
+    @property
+    def presets_dir(self) -> Path:
+        return self._presets_dir if self._presets_dir is not None else settings.PRESETS_DIR
 
     def ensure_seeded(self) -> None:
         """Seed default presets if directory has no .json files."""

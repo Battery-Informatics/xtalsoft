@@ -33,7 +33,11 @@ class RunStore:
     """Manages reading and writing runs/<exp_id>/meta.json on disk."""
 
     def __init__(self, runs_dir: Optional[Path] = None):
-        self.runs_dir = runs_dir or settings.RUNS_DIR
+        self._runs_dir = runs_dir
+
+    @property
+    def runs_dir(self) -> Path:
+        return self._runs_dir if self._runs_dir is not None else settings.RUNS_DIR
 
     def list_experiments(self) -> List[ExperimentItem]:
         """List all experiment runs discovered in runs/*/meta.json."""

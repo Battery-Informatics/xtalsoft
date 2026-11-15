@@ -28,6 +28,17 @@ from .preset_schema import (
     PresetUpdate,
     PresetResponse,
 )
+from .telemetry_schema import (
+    PopulationBreakdown,
+    ExperimentTelemetry,
+)
+from .analysis_schema import (
+    BondLengthStats,
+    CoordinationSite,
+    XRDPak,
+    BatteryMetrics,
+    StructureAnalysisResult,
+)
 
 __all__ = [
     "XtalOptExperimentConfig",
@@ -52,4 +63,11 @@ __all__ = [
     "PresetCreate",
     "PresetUpdate",
     "PresetResponse",
+    "PopulationBreakdown",
+    "ExperimentTelemetry",
+    "BondLengthStats",
+    "CoordinationSite",
+    "XRDPak",
+    "BatteryMetrics",
+    "StructureAnalysisResult",
 ]

@@ -7,9 +7,15 @@ Provides endpoints for:
 - Structure inspection and CIF generation
 """
 
+import json
+import logging
+import asyncio
 from pathlib import Path
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status, WebSocket, WebSocketDisconnect
+from fastapi.responses import StreamingResponse
+
+logger = logging.getLogger(__name__)
 
 from ..schemas.config_schema import XtalOptExperimentConfig
 from ..schemas.preset_schema import (
@@ -27,6 +33,11 @@ from ..schemas.structure_schema import (
     ParsedStructure,
     ExperimentStructuresSummary,
 )
+from ..schemas.telemetry_schema import (
+    ExperimentTelemetry,
+    PopulationBreakdown,
+)
+from ..schemas.analysis_schema import StructureAnalysisResult
 from ..services.config_generator import (
     create_experiment_workspace,
     generate_xtalopt_in_content,
@@ -38,6 +49,8 @@ from ..services.structure_parser import (
     parse_experiment_structures,
     parse_structure_folder,
 )
+from ..services.telemetry_service import get_experiment_telemetry
+from ..services.battery_analyzer import analyze_structure_comprehensive
 from ...config import settings
 
 router = APIRouter()
@@ -148,7 +161,18 @@ def create_experiment(payload: ExperimentCreateRequest):
                 started = (run_res.status == "running")
                 start_message = run_res.message
                 pid = run_res.pid
+                if started:
+                    meta_file = settings.RUNS_DIR / exp_id / "meta.json"
+                    if meta_file.is_file():
+                        try:
+                            m_data = json.loads(meta_file.read_text(encoding="utf-8"))
+                            m_data["status"] = "running"
+                            m_data["pid"] = pid
+                            meta_file.write_text(json.dumps(m_data, indent=2), encoding="utf-8")
+                        except Exception:
+                            pass
             except Exception as ex:
+                logger.error("Failed to start run %s: %s", exp_id, ex)
                 start_message = f"Workspace created, but subprocess could not start: {ex}"
 
         return {
@@ -175,7 +199,16 @@ def create_experiment(payload: ExperimentCreateRequest):
 )
 def list_experiments():
     """List all experiment runs discovered from runs/*/meta.json."""
-    return run_store.list_experiments()
+    items = run_store.list_experiments()
+    for item in items:
+        try:
+            st = process_manager.get_run_status(item.exp_id)
+            if st.status not in ("idle", "unknown"):
+                item.status = st.status
+                item.pid = st.pid
+        except Exception:
+            pass
+    return items
 
 
 @router.get(
@@ -218,6 +251,103 @@ def preview_xtalopt_in(config: XtalOptExperimentConfig):
         return {"content": content}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+# ==============================================================================
+# Live Telemetry & Real-Time Monitoring (Part 3)
+# ==============================================================================
+
+@router.get(
+    "/experiments/{exp_id}/status",
+    tags=["Live Telemetry"],
+)
+def get_live_experiment_status(exp_id: str):
+    """Retrieve instantaneous live execution status and population breakdown."""
+    exp_dir = settings.RUNS_DIR / exp_id
+    if not exp_dir.is_dir() and (settings.BASE_DIR / exp_id).is_dir():
+        exp_dir = settings.BASE_DIR / exp_id
+    if not exp_dir.is_dir():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Experiment '{exp_id}' not found")
+    try:
+        return get_experiment_telemetry(exp_id)
+    except Exception as e:
+        logger.error("Failed to compile telemetry for %s: %s", exp_id, e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.get(
+    "/experiments/{exp_id}/stream",
+    tags=["Live Telemetry"],
+)
+async def stream_experiment_telemetry(exp_id: str):
+    """Server-Sent Events (SSE) endpoint streaming real-time telemetry updates."""
+    exp_dir = settings.RUNS_DIR / exp_id
+    if not exp_dir.is_dir() and (settings.BASE_DIR / exp_id).is_dir():
+        exp_dir = settings.BASE_DIR / exp_id
+    if not exp_dir.is_dir():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Experiment '{exp_id}' not found")
+
+    async def event_generator():
+        while True:
+            try:
+                data = get_experiment_telemetry(exp_id)
+                yield f"data: {json.dumps(data)}\n\n"
+            except Exception as e:
+                logger.error("Error in SSE telemetry stream for %s: %s", exp_id, e)
+                yield f"event: error\ndata: {json.dumps({'error': str(e)})}\n\n"
+            await asyncio.sleep(2)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@router.websocket("/experiments/{exp_id}/ws")
+@router.websocket("/ws/experiments/{exp_id}")
+async def websocket_experiment_telemetry(websocket: WebSocket, exp_id: str):
+    """WebSocket stream emitting real-time telemetry updates."""
+    await websocket.accept()
+    try:
+        while True:
+            try:
+                data = get_experiment_telemetry(exp_id)
+                await websocket.send_text(json.dumps(data))
+            except Exception as e:
+                logger.error("Error in WS telemetry stream for %s: %s", exp_id, e)
+            await asyncio.sleep(2)
+    except WebSocketDisconnect:
+        logger.info("WebSocket client disconnected for experiment %s", exp_id)
+    except Exception as e:
+        logger.warning("WebSocket connection exception for %s: %s", exp_id, e)
+
+
+@router.get(
+    "/experiments/{exp_id}/structures",
+    response_model=ExperimentStructuresSummary,
+    tags=["Experiments"],
+)
+def get_experiment_structures_endpoint(
+    exp_id: str,
+    symprec: float = Query(0.01, ge=0.0001, le=0.5, description="Spglib symmetry tolerance"),
+):
+    """Ranked candidate list parsed from localWorkingDirectory."""
+    return get_experiment_structures(exp_id=exp_id, symprec=symprec)
+
+
+@router.get(
+    "/experiments/{exp_id}/logs",
+    response_model=RunLogsResponse,
+    tags=["Experiments"],
+)
+def get_experiment_logs_endpoint(exp_id: str, tail: int = Query(200, ge=1, le=5000)):
+    """Retrieve captured stdout and stderr execution logs."""
+    return process_manager.get_run_logs(exp_id=exp_id, tail=tail)
 
 
 # ==============================================================================
@@ -287,12 +417,15 @@ def get_experiment_structures(
 ):
     """Parse all relaxed structures in localWorkingDirectory and return metadata + CIFs."""
     exp_dir = settings.RUNS_DIR / exp_id
+    if not exp_dir.is_dir() and (settings.BASE_DIR / exp_id).is_dir():
+        exp_dir = settings.BASE_DIR / exp_id
+
     if not exp_dir.is_dir():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Experiment directory {exp_id} does not exist.",
         )
-    return parse_experiment_structures(exp_id=exp_id, symprec=symprec)
+    return parse_experiment_structures(exp_id=exp_id, base_runs_dir=exp_dir.parent, symprec=symprec)
 
 
 @router.get(
@@ -307,11 +440,20 @@ def get_single_structure(
 ):
     """Retrieve full metadata and standardized CIF for a specific structure tag (e.g. '1x1')."""
     exp_dir = settings.RUNS_DIR / exp_id
-    work_dir = exp_dir / "localWorkingDirectory"
+    if not exp_dir.is_dir() and (settings.BASE_DIR / exp_id).is_dir():
+        exp_dir = settings.BASE_DIR / exp_id
+
+    if (exp_dir / "localWorkingDirectory").is_dir():
+        work_dir = exp_dir / "localWorkingDirectory"
+    elif exp_dir.is_dir():
+        work_dir = exp_dir
+    else:
+        work_dir = exp_dir / "localWorkingDirectory"
+
     if not work_dir.is_dir():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No localWorkingDirectory found for experiment {exp_id}.",
+            detail=f"No working directory found for experiment {exp_id}.",
         )
 
     # Convert tag e.g. "1x1" to directory format "00001x00001" or search match
@@ -347,3 +489,47 @@ def get_single_structure(
         )
 
     return parsed
+
+
+@router.get(
+    "/experiments/{exp_id}/structures/{tag}",
+    response_model=ParsedStructure,
+    tags=["Structure Visualizer & Parser"],
+)
+def get_single_structure_alias(
+    exp_id: str,
+    tag: str,
+    symprec: float = Query(0.01, ge=0.0001, le=0.5),
+):
+    """Retrieve full metadata and standardized CIF for a specific structure tag."""
+    return get_single_structure(exp_id=exp_id, tag=tag, symprec=symprec)
+
+
+# ==============================================================================
+# Crystallography & Battery Post-Processing API (Part 4)
+# ==============================================================================
+
+@router.get(
+    "/experiments/{exp_id}/structures/{struct_id}/analysis",
+    response_model=StructureAnalysisResult,
+    tags=["Battery & XRD Analyzer (Part 4)"],
+)
+@router.get(
+    "/runs/{exp_id}/structures/{struct_id}/analysis",
+    response_model=StructureAnalysisResult,
+    tags=["Battery & XRD Analyzer (Part 4)"],
+)
+def get_structure_analysis(
+    exp_id: str,
+    struct_id: str,
+    symprec: float = Query(0.01, ge=0.0001, le=0.5, description="Spglib symmetry tolerance"),
+):
+    """Compute crystallography, nearest-neighbor coordination, powder XRD, and theoretical capacity."""
+    result = analyze_structure_comprehensive(exp_id=exp_id, struct_id=struct_id, symprec=symprec)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Structure '{struct_id}' in experiment '{exp_id}' not found or could not be parsed.",
+        )
+    return result
+

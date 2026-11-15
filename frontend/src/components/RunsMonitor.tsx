@@ -1,32 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import { Activity, Square, Terminal, RefreshCw } from 'lucide-react';
-import { fetchExperiments, stopExperiment, fetchRunStatus, fetchRunLogs } from '../api/client';
-import type { ExperimentItem } from '../types';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { RefreshCw } from 'lucide-react';
+import {
+  fetchExperiments,
+  stopExperiment,
+  fetchExperimentStructures,
+  subscribeExperimentTelemetry,
+} from '../api/client';
+import type {
+  ExperimentItem,
+  ExperimentTelemetry,
+  ParsedStructure,
+} from '../types';
+import { ConvergencePlot } from './ConvergencePlot';
+import { CandidateTable } from './CandidateTable';
+import { TerminalLogDrawer } from './TerminalLogDrawer';
+import { CrystalBatteryAnalyzer } from './CrystalBatteryAnalyzer';
 
-interface MonitorProps {
+interface RunsMonitorProps {
   selectedExpId?: string | null;
-  onSelectExperiment?: (id: string) => void;
   onOpenStudio?: () => void;
+  onOpenAnalyzer?: (expId: string, structId: string) => void;
 }
 
-export const RunsMonitor: React.FC<MonitorProps> = ({
+export const RunsMonitor: React.FC<RunsMonitorProps> = ({
   selectedExpId: initialSelectedId,
   onOpenStudio,
+  onOpenAnalyzer,
 }) => {
   const [experiments, setExperiments] = useState<ExperimentItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId || null);
-  const [loading, setLoading] = useState(true);
-  const [liveStatus, setLiveStatus] = useState<any>(null);
-  const [logs, setLogs] = useState<{ stdout: string[]; stderr: string[] }>({ stdout: [], stderr: [] });
-  const [logsLoading, setLogsLoading] = useState(false);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [stopping, setStopping] = useState<boolean>(false);
 
-  // Load experiments
-  const loadExperiments = async () => {
+  // Live telemetry state
+  const [telemetry, setTelemetry] = useState<ExperimentTelemetry | null>(null);
+  const [structures, setStructures] = useState<ParsedStructure[]>([]);
+  const [selectedStructure, setSelectedStructure] = useState<ParsedStructure | null>(null);
+  const [structuresLoading, setStructuresLoading] = useState<boolean>(false);
+  const [isAnalyzerOpen, setIsAnalyzerOpen] = useState<boolean>(false);
+
+  // Load experiments list
+  const loadExperiments = useCallback(async () => {
     try {
       const data = await fetchExperiments();
       setExperiments(data);
       if (!selectedId && data.length > 0) {
+        setSelectedId(data[0].exp_id);
+      } else if (selectedId && !data.some((e) => e.exp_id === selectedId) && data.length > 0) {
         setSelectedId(data[0].exp_id);
       }
     } catch (e) {
@@ -34,235 +54,354 @@ export const RunsMonitor: React.FC<MonitorProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedId]);
 
   useEffect(() => {
     loadExperiments();
+  }, [loadExperiments]);
+
+  // Update selectedId if parent passes new initialSelectedId
+  useEffect(() => {
+    if (initialSelectedId && initialSelectedId !== selectedId) {
+      setSelectedId(initialSelectedId);
+    }
+  }, [initialSelectedId]);
+
+  // Load structures for selected experiment
+  const loadStructures = useCallback(async (expId: string) => {
+    setStructuresLoading(true);
+    try {
+      const summary = await fetchExperimentStructures(expId);
+      setStructures(summary.structures || []);
+      // If a structure was selected, refresh its reference
+      setSelectedStructure((prev) => {
+        if (!prev) return summary.structures[0] || null;
+        const updated = summary.structures.find((s) => s.tag === prev.tag);
+        return updated || summary.structures[0] || null;
+      });
+    } catch (e) {
+      console.error('Failed to load structures', e);
+      setStructures([]);
+    } finally {
+      setStructuresLoading(false);
+    }
   }, []);
 
-  // Poll status & logs when selectedId changes
-  const updateRunDetails = async (id: string) => {
-    setLogsLoading(true);
+  // Subscribe to live telemetry stream (SSE / WS / Polling fallback)
+  const prevOptimizedCount = useRef<number>(0);
+  useEffect(() => {
+    if (!selectedId) {
+      setTelemetry(null);
+      setStructures([]);
+      setSelectedStructure(null);
+      return;
+    }
+
+    // Initial load of structures
+    loadStructures(selectedId);
+
+    // Subscribe to telemetry
+    const unsubscribe = subscribeExperimentTelemetry(
+      selectedId,
+      (data: ExperimentTelemetry) => {
+        setTelemetry(data);
+
+        // If newly optimized structures arrived, reload structures
+        const currentOpt = data.population.completed_optimized;
+        if (currentOpt !== prevOptimizedCount.current) {
+          prevOptimizedCount.current = currentOpt;
+          loadStructures(selectedId);
+        }
+      },
+      (err) => {
+        console.warn('Telemetry stream notice:', err);
+      }
+    );
+
+    // Also poll structures every 6 seconds if running
+    const pollStructs = setInterval(() => {
+      loadStructures(selectedId);
+    }, 6000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(pollStructs);
+    };
+  }, [selectedId, loadStructures]);
+
+  // Stop active run
+  const handleStopRun = async () => {
+    if (!selectedId) return;
+    if (!confirm(`Are you sure you want to stop active search run ${selectedId}?`)) return;
+
+    setStopping(true);
     try {
-      const [st, lg] = await Promise.all([
-        fetchRunStatus(id).catch(() => null),
-        fetchRunLogs(id, 250).catch(() => ({ stdout_lines: [], stderr_lines: [] })),
-      ]);
-      setLiveStatus(st);
-      setLogs({ stdout: lg.stdout_lines || [], stderr: lg.stderr_lines || [] });
-    } catch (e) {
-      console.error(e);
+      await stopExperiment(selectedId);
+      await loadExperiments();
+      loadStructures(selectedId);
+    } catch (e: any) {
+      alert(`Failed to stop run: ${e.message}`);
     } finally {
-      setLogsLoading(false);
+      setStopping(false);
     }
   };
 
-  useEffect(() => {
-    if (!selectedId) return;
-    updateRunDetails(selectedId);
+  const currentExp = experiments.find((e) => e.exp_id === selectedId);
+  const isRunning =
+    telemetry?.process.status === 'running' || currentExp?.status === 'running';
 
-    if (!autoRefresh) return;
-    const interval = setInterval(() => {
-      updateRunDetails(selectedId);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [selectedId, autoRefresh]);
-
-  const handleStop = async (id: string) => {
-    try {
-      await stopExperiment(id);
-      updateRunDetails(id);
-      loadExperiments();
-    } catch (e: any) {
-      alert(`Error stopping experiment: ${e.message}`);
+  const getStatusBadge = (status?: string) => {
+    const st = (status || 'unknown').toLowerCase();
+    if (st === 'running') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 ">
+          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          Running
+        </span>
+      );
     }
+    if (st === 'completed') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+          Completed
+        </span>
+      );
+    }
+    if (st === 'stopped') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+          Stopped
+        </span>
+      );
+    }
+    if (st === 'failed') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+          Failed
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200 capitalize">
+        {status || 'Idle'}
+      </span>
+    );
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800">
-              Run Monitor & Execution (Part 2 Placeholder)
-            </span>
-            <span className="text-xs text-slate-400">Disk Store: <code className="text-cyan-400 font-mono">runs/*/meta.json</code></span>
+      <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-slate-500">Run</p>
+          <div className="mt-1 flex items-center gap-3 flex-wrap">
+            <h1 className="text-xl font-semibold text-slate-900">
+              {currentExp?.name || selectedId || 'No run selected'}
+            </h1>
+            {selectedId && getStatusBadge(telemetry?.process.status || currentExp?.status)}
+            {telemetry?.process.pid && (
+              <span className="text-xs font-mono text-slate-500">PID {telemetry.process.pid}</span>
+            )}
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Active & Historical Runs</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Track execution lifecycle, inspect PIDs, and stream stdout/stderr logs from isolated workspaces.
-          </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-xs text-slate-400 font-medium cursor-pointer">
-            <input
-              type="checkbox"
-              checked={autoRefresh}
-              onChange={(e) => setAutoRefresh(e.target.checked)}
-              className="rounded bg-slate-950 border-slate-800 text-blue-600 focus:ring-0"
-            />
-            Auto-refresh (3s)
-          </label>
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={selectedId || ''}
+            onChange={(e) => setSelectedId(e.target.value)}
+            aria-label="Select run"
+            className="h-9 max-w-xs rounded-md border border-slate-300 bg-slate-50 px-2.5 text-sm text-slate-800"
+          >
+            {experiments.length === 0 ? (
+              <option value="">No runs found</option>
+            ) : (
+              experiments.map((exp) => (
+                <option key={exp.exp_id} value={exp.exp_id}>
+                  {exp.name} ({exp.exp_id})
+                </option>
+              ))
+            )}
+          </select>
 
           <button
             onClick={() => {
               loadExperiments();
-              if (selectedId) updateRunDetails(selectedId);
+              if (selectedId) loadStructures(selectedId);
             }}
-            className="p-2.5 rounded-xl text-slate-400 hover:text-slate-200 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 transition-colors"
-            title="Refresh Runs"
+            disabled={loading || structuresLoading}
+            className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-slate-300 bg-surface text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+            title="Refresh runs and structures"
+            aria-label="Refresh"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={`w-4 h-4 ${structuresLoading ? 'animate-spin' : ''}`} />
           </button>
-        </div>
-      </div>
 
-      {loading ? (
-        <div className="p-12 text-center text-slate-400 text-sm">
-          Loading experiment records...
-        </div>
-      ) : experiments.length === 0 ? (
-        <div className="text-center p-12 bg-slate-900 border border-slate-800 rounded-2xl">
-          <Activity className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-300">No Experiment Workspaces Found</h3>
-          <p className="text-xs text-slate-500 mt-1 mb-4">
-            Launch or stage an experiment from the Experiment Studio to begin tracking.
-          </p>
+          {isRunning && (
+            <button
+              onClick={handleStopRun}
+              disabled={stopping}
+              className="h-9 px-3.5 rounded-md border border-red-300 bg-surface text-red-700 hover:bg-red-50 text-sm font-medium disabled:opacity-50"
+            >
+              {stopping ? 'Stopping…' : 'Stop run'}
+            </button>
+          )}
+
           {onOpenStudio && (
             <button
               onClick={onOpenStudio}
-              className="px-4 py-2 rounded-lg text-sm bg-blue-600 hover:bg-blue-500 text-white font-medium"
+              className="h-9 px-4 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium"
             >
-              Open Experiment Studio
+              New run
             </button>
           )}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left: Experiment List (4 cols) */}
-          <div className="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg">
-            <div className="bg-slate-950 px-4 py-3 border-b border-slate-800 text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Discovered Workspaces ({experiments.length})
-            </div>
-            <div className="divide-y divide-slate-800/80 max-h-[600px] overflow-y-auto">
-              {experiments.map((exp) => {
-                const isSelected = exp.exp_id === selectedId;
-                const isRunning = exp.status === 'running';
+      </div>
 
-                return (
-                  <button
-                    key={exp.exp_id}
-                    onClick={() => setSelectedId(exp.exp_id)}
-                    className={`w-full text-left p-4 transition-colors cursor-pointer flex flex-col gap-1.5 ${
-                      isSelected
-                        ? 'bg-blue-950/40 border-l-4 border-blue-500'
-                        : 'hover:bg-slate-800/50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-sm text-slate-200 truncate">
-                        {exp.name}
-                      </span>
-                      <span
-                        className={`text-[10px] font-mono px-2 py-0.5 rounded uppercase ${
-                          isRunning
-                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                            : exp.status === 'stopped'
-                            ? 'bg-amber-950 text-amber-400 border border-amber-800'
-                            : exp.status === 'completed'
-                            ? 'bg-blue-950 text-blue-400 border border-blue-800'
-                            : 'bg-slate-800 text-slate-400'
-                        }`}
-                      >
-                        {exp.status}
-                      </span>
-                    </div>
-
-                    <div className="text-[11px] font-mono text-cyan-400 truncate">
-                      {exp.chemicalFormulas || 'Custom Composition'}
-                    </div>
-
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono">
-                      <span>runs/{exp.exp_id}</span>
-                      {exp.pid && <span>PID: {exp.pid}</span>}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-px overflow-hidden rounded-lg border border-slate-200 bg-slate-200">
+        <div className="bg-surface px-4 py-3.5">
+          <div className="text-xs text-slate-500">Structures</div>
+          <div className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">
+            {telemetry?.population.total_generated ?? structures.length}
           </div>
+          <div className="mt-0.5 text-xs text-slate-500 truncate">{structures.length} parsed on disk</div>
+        </div>
+        <div className="bg-surface px-4 py-3.5">
+          <div className="text-xs text-slate-500">Optimized</div>
+          <div className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">
+            {telemetry?.population.completed_optimized ??
+              structures.filter((s) => (s.status || '').toLowerCase().includes('optim')).length}
+          </div>
+          <div className="mt-0.5 text-xs text-slate-500 truncate">Relaxed candidates</div>
+        </div>
+        <div className="bg-surface px-4 py-3.5">
+          <div className="text-xs text-slate-500">Running / queued</div>
+          <div className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">
+            {(telemetry?.population.currently_optimizing ?? 0) + (telemetry?.population.queued ?? 0)}
+          </div>
+          <div className="mt-0.5 text-xs text-slate-500 truncate">{telemetry?.population.currently_optimizing ?? 0} active, {telemetry?.population.queued ?? 0} waiting</div>
+        </div>
+        <div className="bg-surface px-4 py-3.5">
+          <div className="text-xs text-slate-500">Duplicates</div>
+          <div className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">
+            {telemetry?.population.duplicate ?? 0}
+          </div>
+          <div className="mt-0.5 text-xs text-slate-500 truncate">Removed by fingerprint</div>
+        </div>
+        <div className="bg-surface px-4 py-3.5 col-span-2 lg:col-span-1">
+          <div className="text-xs text-slate-500">Lowest enthalpy (eV/atom)</div>
+          <div className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">
+            {telemetry?.population.best_enthalpy_per_atom !== null &&
+            telemetry?.population.best_enthalpy_per_atom !== undefined
+              ? telemetry.population.best_enthalpy_per_atom.toFixed(4)
+              : '–'}
+          </div>
+          <div className="mt-0.5 text-xs text-slate-500 truncate">{telemetry?.population.best_structure_tag ? <span className="font-mono">{telemetry.population.best_structure_tag}</span> : 'No result yet'}</div>
+        </div>
+      </div>
 
-          {/* Right: Live Monitor & Logs (8 cols) */}
-          <div className="lg:col-span-8 space-y-4">
-            {selectedId && (
-              <>
-                {/* Active Experiment Banner */}
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="grid grid-cols-1 gap-6">
+        <ConvergencePlot
+          structures={structures}
+          selectedTag={selectedStructure?.tag}
+          onSelectStructure={(struct) => setSelectedStructure(struct)}
+        />
+
+        {selectedStructure && (
+          <div className="bg-surface border border-slate-200 rounded-lg px-4 py-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="font-semibold text-slate-900 text-sm">
+                  Candidate <span className="font-mono">{selectedStructure.tag}</span>
+                </h4>
+                <span className="text-sm font-mono text-slate-600">{selectedStructure.formula}</span>
+                <span className="text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+                  {selectedStructure.status}
+                </span>
+              </div>
+              <dl className="flex items-center gap-x-5 gap-y-1 text-xs text-slate-500 mt-1.5 flex-wrap">
+                <div>
+                  Space group{' '}
+                  <dd className="inline text-slate-800">
+                    {selectedStructure.space_group?.symbol || 'N/A'} (#{selectedStructure.space_group?.number || '?'})
+                  </dd>
+                </div>
+                <div>
+                  H/atom{' '}
+                  <dd className="inline text-slate-800 font-mono">
+                    {selectedStructure.enthalpy_per_atom !== null &&
+                    selectedStructure.enthalpy_per_atom !== undefined
+                      ? `${selectedStructure.enthalpy_per_atom.toFixed(4)} eV`
+                      : 'N/A'}
+                  </dd>
+                </div>
+                <div>
+                  Volume{' '}
+                  <dd className="inline text-slate-800 font-mono">
+                    {selectedStructure.volume ? `${selectedStructure.volume.toFixed(2)} Å³` : 'N/A'}
+                  </dd>
+                </div>
+                {selectedStructure.density && (
                   <div>
-                    <div className="text-xs font-mono text-slate-400">runs/{selectedId}/meta.json</div>
-                    <h2 className="text-lg font-bold text-white mt-0.5">
-                      {experiments.find((e) => e.exp_id === selectedId)?.name || selectedId}
-                    </h2>
-                    <div className="flex items-center gap-3 text-xs text-slate-400 font-mono mt-1">
-                      <span>Status: <strong className="text-slate-200">{liveStatus?.status || 'idle'}</strong></span>
-                      {liveStatus?.pid && <span>PID: <strong className="text-slate-200">{liveStatus.pid}</strong></span>}
-                      {liveStatus?.elapsed_seconds !== null && liveStatus?.elapsed_seconds !== undefined && (
-                        <span>Elapsed: {Math.round(liveStatus.elapsed_seconds)}s</span>
-                      )}
-                    </div>
+                    Density{' '}
+                    <dd className="inline text-slate-800 font-mono">{selectedStructure.density.toFixed(2)} g/cm³</dd>
                   </div>
+                )}
+                {selectedStructure.parents && (
+                  <div className="truncate max-w-xs">
+                    Parents <dd className="inline text-slate-700 font-mono">{selectedStructure.parents}</dd>
+                  </div>
+                )}
+              </dl>
+            </div>
 
-                  <div className="flex items-center gap-2">
-                    {liveStatus?.status === 'running' && (
-                      <button
-                        onClick={() => handleStop(selectedId)}
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-rose-300 bg-rose-950/80 hover:bg-rose-900 border border-rose-800 transition-all cursor-pointer"
-                      >
-                        <Square className="w-3.5 h-3.5 fill-rose-300" />
-                        Stop Subprocess
-                      </button>
-                    )}
-                  </div>
-                </div>
+            <button
+              onClick={() => {
+                if (onOpenAnalyzer && selectedId && selectedStructure) {
+                  onOpenAnalyzer(selectedId, selectedStructure.tag);
+                }
+                setIsAnalyzerOpen(true);
+              }}
+              className="shrink-0 h-9 px-3.5 rounded-md border border-slate-300 bg-surface hover:bg-slate-100 text-slate-800 text-sm font-medium cursor-pointer"
+              title="Open 3D structure, XRD and cathode metrics"
+            >
+              Analyze structure
+            </button>
+          </div>
+        )}
 
-                {/* Console Log Terminal */}
-                <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
-                  <div className="bg-slate-900 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 text-slate-300 font-mono">
-                      <Terminal className="w-4 h-4 text-cyan-400" />
-                      <span>Console Stream (stdout.log & stderr.log)</span>
-                    </div>
-                    {logsLoading && <RefreshCw className="w-3.5 h-3.5 animate-spin text-cyan-400" />}
-                  </div>
+        {/* Filterable, Searchable Candidate Table */}
+        <CandidateTable
+          structures={structures}
+          selectedTag={selectedStructure?.tag}
+          onSelectStructure={(struct) => setSelectedStructure(struct)}
+          onAnalyzeStructure={(struct) => {
+            setSelectedStructure(struct);
+            if (onOpenAnalyzer && selectedId) {
+              onOpenAnalyzer(selectedId, struct.tag);
+            }
+            setIsAnalyzerOpen(true);
+          }}
+        />
+      </div>
 
-                  <div className="p-4 font-mono text-xs text-slate-300 max-h-[450px] overflow-y-auto space-y-1">
-                    {logs.stdout.length === 0 && logs.stderr.length === 0 ? (
-                      <div className="text-slate-600 italic py-8 text-center">
-                        No console logs captured yet for runs/{selectedId}/...
-                      </div>
-                    ) : (
-                      <>
-                        {logs.stdout.map((line, idx) => (
-                          <div key={`out-${idx}`} className="text-slate-300 leading-relaxed">
-                            {line}
-                          </div>
-                        ))}
-                        {logs.stderr.map((line, idx) => (
-                          <div key={`err-${idx}`} className="text-rose-400 font-semibold leading-relaxed">
-                            [STDERR] {line}
-                          </div>
-                        ))}
-                      </>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
+      {/* Interactive 3D Crystal & Battery Analyzer Modal Overlay */}
+      {isAnalyzerOpen && selectedStructure && selectedId && (
+        <div className="fixed inset-0 z-50 bg-slate-50 p-4 sm:p-6 lg:p-8 overflow-y-auto flex items-start justify-center">
+          <div className="max-w-6xl w-full my-6">
+            <CrystalBatteryAnalyzer
+              expId={selectedId}
+              structId={selectedStructure.tag}
+              onClose={() => setIsAnalyzerOpen(false)}
+            />
           </div>
         </div>
       )}
+
+      {/* Collapsible Live Execution Terminal Drawer */}
+      <TerminalLogDrawer
+        stdoutLines={telemetry?.logs.stdout_lines || []}
+        stderrLines={telemetry?.logs.stderr_lines || []}
+        isRunning={isRunning}
+      />
     </div>
   );
 };

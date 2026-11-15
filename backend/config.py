@@ -27,6 +27,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 class Settings(BaseSettings):
     """Application settings with environment variable overrides."""
 
+    BASE_DIR: Path = BASE_DIR
+
     # Application info
     PROJECT_NAME: str = "XtalOpt Web Workbench"
     VERSION: str = "0.1.0"
@@ -37,11 +39,14 @@ class Settings(BaseSettings):
     PORT: int = int(os.getenv("PORT", "8000"))
     DEBUG: bool = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes")
 
-    # XtalOpt binary path (defaults to looking inside workspace XtalOpt/bin/xtalopt)
-    XTALOPT_BIN_PATH: Path = Path(
-        os.getenv(
-            "XTALOPT_BIN_PATH",
-            str(BASE_DIR / "XtalOpt" / "bin" / "xtalopt")
+    # XtalOpt binary path (auto-detects compiled binary)
+    XTALOPT_BIN_PATH: Path = (
+        Path(os.getenv("XTALOPT_BIN_PATH"))
+        if os.getenv("XTALOPT_BIN_PATH")
+        else (
+            BASE_DIR / "xtalopt_latest" / "build" / "bin" / "xtalopt"
+            if (BASE_DIR / "xtalopt_latest" / "build" / "bin" / "xtalopt").is_file()
+            else BASE_DIR / "XtalOpt" / "bin" / "xtalopt"
         )
     )
 
