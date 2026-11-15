@@ -9,9 +9,11 @@ Provides endpoints for:
 
 import json
 import logging
+import asyncio
 from pathlib import Path
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status, WebSocket, WebSocketDisconnect
+from fastapi.responses import StreamingResponse
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +33,10 @@ from ..schemas.structure_schema import (
     ParsedStructure,
     ExperimentStructuresSummary,
 )
+from ..schemas.telemetry_schema import (
+    ExperimentTelemetry,
+    PopulationBreakdown,
+)
 from ..services.config_generator import (
     create_experiment_workspace,
     generate_xtalopt_in_content,
@@ -42,6 +48,7 @@ from ..services.structure_parser import (
     parse_experiment_structures,
     parse_structure_folder,
 )
+from ..services.telemetry_service import get_experiment_telemetry
 from ...config import settings
 
 router = APIRouter()
@@ -242,6 +249,103 @@ def preview_xtalopt_in(config: XtalOptExperimentConfig):
         return {"content": content}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+# ==============================================================================
+# Live Telemetry & Real-Time Monitoring (Part 3)
+# ==============================================================================
+
+@router.get(
+    "/experiments/{exp_id}/status",
+    tags=["Live Telemetry"],
+)
+def get_live_experiment_status(exp_id: str):
+    """Retrieve instantaneous live execution status and population breakdown."""
+    exp_dir = settings.RUNS_DIR / exp_id
+    if not exp_dir.is_dir() and (settings.BASE_DIR / exp_id).is_dir():
+        exp_dir = settings.BASE_DIR / exp_id
+    if not exp_dir.is_dir():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Experiment '{exp_id}' not found")
+    try:
+        return get_experiment_telemetry(exp_id)
+    except Exception as e:
+        logger.error("Failed to compile telemetry for %s: %s", exp_id, e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.get(
+    "/experiments/{exp_id}/stream",
+    tags=["Live Telemetry"],
+)
+async def stream_experiment_telemetry(exp_id: str):
+    """Server-Sent Events (SSE) endpoint streaming real-time telemetry updates."""
+    exp_dir = settings.RUNS_DIR / exp_id
+    if not exp_dir.is_dir() and (settings.BASE_DIR / exp_id).is_dir():
+        exp_dir = settings.BASE_DIR / exp_id
+    if not exp_dir.is_dir():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Experiment '{exp_id}' not found")
+
+    async def event_generator():
+        while True:
+            try:
+                data = get_experiment_telemetry(exp_id)
+                yield f"data: {json.dumps(data)}\n\n"
+            except Exception as e:
+                logger.error("Error in SSE telemetry stream for %s: %s", exp_id, e)
+                yield f"event: error\ndata: {json.dumps({'error': str(e)})}\n\n"
+            await asyncio.sleep(2)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@router.websocket("/experiments/{exp_id}/ws")
+@router.websocket("/ws/experiments/{exp_id}")
+async def websocket_experiment_telemetry(websocket: WebSocket, exp_id: str):
+    """WebSocket stream emitting real-time telemetry updates."""
+    await websocket.accept()
+    try:
+        while True:
+            try:
+                data = get_experiment_telemetry(exp_id)
+                await websocket.send_text(json.dumps(data))
+            except Exception as e:
+                logger.error("Error in WS telemetry stream for %s: %s", exp_id, e)
+            await asyncio.sleep(2)
+    except WebSocketDisconnect:
+        logger.info("WebSocket client disconnected for experiment %s", exp_id)
+    except Exception as e:
+        logger.warning("WebSocket connection exception for %s: %s", exp_id, e)
+
+
+@router.get(
+    "/experiments/{exp_id}/structures",
+    response_model=ExperimentStructuresSummary,
+    tags=["Experiments"],
+)
+def get_experiment_structures_endpoint(
+    exp_id: str,
+    symprec: float = Query(0.01, ge=0.0001, le=0.5, description="Spglib symmetry tolerance"),
+):
+    """Ranked candidate list parsed from localWorkingDirectory."""
+    return get_experiment_structures(exp_id=exp_id, symprec=symprec)
+
+
+@router.get(
+    "/experiments/{exp_id}/logs",
+    response_model=RunLogsResponse,
+    tags=["Experiments"],
+)
+def get_experiment_logs_endpoint(exp_id: str, tail: int = Query(200, ge=1, le=5000)):
+    """Retrieve captured stdout and stderr execution logs."""
+    return process_manager.get_run_logs(exp_id=exp_id, tail=tail)
 
 
 # ==============================================================================

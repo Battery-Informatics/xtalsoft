@@ -59,10 +59,26 @@ class XtalOptProcessManager:
     """Manages spawning, tracking, stopping, and logging for XtalOpt CLI processes."""
 
     def __init__(self, runs_dir: Optional[Path] = None, bin_path: Optional[Path] = None):
-        self.runs_dir = runs_dir or settings.RUNS_DIR
-        self.bin_path = bin_path or settings.XTALOPT_BIN_PATH
+        self._runs_dir = runs_dir
+        self._bin_path = bin_path
         self._processes: Dict[str, ProcessState] = {}
         self._lock = threading.Lock()
+
+    @property
+    def runs_dir(self) -> Path:
+        return self._runs_dir if self._runs_dir is not None else settings.RUNS_DIR
+
+    @runs_dir.setter
+    def runs_dir(self, val: Path) -> None:
+        self._runs_dir = val
+
+    @property
+    def bin_path(self) -> Path:
+        return self._bin_path if self._bin_path is not None else settings.XTALOPT_BIN_PATH
+
+    @bin_path.setter
+    def bin_path(self, val: Path) -> None:
+        self._bin_path = val
 
     def _metadata_path(self, exp_id: str) -> Path:
         return self.runs_dir / exp_id / "meta.json"

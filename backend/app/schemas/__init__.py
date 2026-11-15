@@ -28,6 +28,10 @@ from .preset_schema import (
     PresetUpdate,
     PresetResponse,
 )
+from .telemetry_schema import (
+    PopulationBreakdown,
+    ExperimentTelemetry,
+)
 
 __all__ = [
     "XtalOptExperimentConfig",
@@ -52,4 +56,6 @@ __all__ = [
     "PresetCreate",
     "PresetUpdate",
     "PresetResponse",
+    "PopulationBreakdown",
+    "ExperimentTelemetry",
 ]

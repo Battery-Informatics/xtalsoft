@@ -96,6 +96,7 @@ class ParsedStructure(BaseModel):
 
     # Status in evolutionary run
     status: str = Field(..., description="Status e.g. 'Optimized', 'InProcess', 'Failed'")
+    parents: Optional[str] = Field(default=None, description="Parent structure(s) and genetic operator lineage")
 
     # Standardized CIF file content
     cif: str = Field(..., description="Standardized .cif file content ready for 3Dmol.js rendering")

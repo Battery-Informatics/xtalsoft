@@ -242,8 +242,12 @@ def parse_structure_state(state_path: Path) -> Optional[Dict[str, Any]]:
         generation = int(kv_pairs.get("generation", 0))
         id_number = int(kv_pairs.get("id", 0))
         index = int(kv_pairs.get("index", 0))
-        status_code = int(kv_pairs.get("status", 0))
-        status_name = STATE_NAMES.get(status_code, f"State_{status_code}")
+        status_val = kv_pairs.get("status", "0")
+        try:
+            status_code = int(status_val)
+            status_name = STATE_NAMES.get(status_code, f"State_{status_code}")
+        except ValueError:
+            status_name = status_val
 
         # Cell matrix 3x3
         # In QSettings: current/cell/00, 01, 02, 10, 11, 12, 20, 21, 22
@@ -294,6 +298,13 @@ def parse_structure_state(state_path: Path) -> Optional[Dict[str, Any]]:
             else None
         )
 
+        parents = (
+            kv_pairs.get("parents")
+            or kv_pairs.get("structure/parents")
+            or kv_pairs.get("structure/parentStructure")
+            or kv_pairs.get("parentStructure")
+        )
+
         return {
             "generation": generation,
             "id_number": id_number,
@@ -304,6 +315,7 @@ def parse_structure_state(state_path: Path) -> Optional[Dict[str, Any]]:
             "cart_coords": coords,
             "energy": energy,
             "enthalpy": enthalpy,
+            "parents": parents,
         }
     except Exception as e:
         logger.error("Error parsing structure.state at %s: %s", state_path, e)
@@ -664,6 +676,7 @@ def parse_structure_folder(
         lattice=lattice_obj,
         atoms=atom_sites,
         status=status,
+        parents=data.get("parents"),
         cif=cif_str,
     )
 
@@ -736,6 +749,15 @@ def parse_experiment_structures(
     # If results.txt contains entries whose directories didn't yield 3D geometries yet
     # (e.g. in-flight or waiting jobs), we still have accurate counts
     total = len(structures)
+
+    # Sort structures: ranked first, then by lowest enthalpy_per_atom
+    structures.sort(
+        key=lambda s: (
+            s.rank if s.rank is not None else 999999,
+            s.enthalpy_per_atom if s.enthalpy_per_atom is not None else 999999.0,
+            s.index,
+        )
+    )
 
     return ExperimentStructuresSummary(
         exp_id=exp_id,
