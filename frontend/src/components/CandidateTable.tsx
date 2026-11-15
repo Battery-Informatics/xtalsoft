@@ -150,7 +150,7 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg flex flex-col overflow-hidden">
+    <div className="bg-surface border border-slate-200 rounded-lg flex flex-col overflow-hidden">
       {/* Controls Bar */}
       <div className="p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
         {/* Search */}
@@ -161,7 +161,7 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by tag, formula, space group, operator..."
-            className="w-full bg-white border border-slate-300 rounded-md pl-9 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-500 focus:outline-none focus:border-blue-600"
+            className="w-full bg-slate-50 border border-slate-300 rounded-md pl-9 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-500 focus:outline-none focus:border-blue-600"
           />
         </div>
 
@@ -180,7 +180,7 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
               onClick={() => setStatusFilter(pill.id)}
               className={`px-2.5 py-1 rounded-md transition-all ${
                 statusFilter === pill.id
-                  ? 'bg-white text-slate-900 font-medium border border-slate-300 shadow-sm'
+                  ? 'bg-surface text-slate-900 font-medium border border-slate-300 shadow-sm'
                   : 'bg-slate-50 text-slate-600 hover:text-slate-800 border border-slate-200'
               }`}
             >
@@ -324,7 +324,7 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
                             onSelectStructure(s);
                             onAnalyzeStructure(s);
                           }}
-                          className="px-2 py-0.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-[11px] font-medium"
+                          className="px-2 py-0.5 rounded border border-slate-300 bg-surface hover:bg-slate-100 text-slate-700 text-[11px] font-medium"
                           title="Open in 3D Crystal & Battery Analyzer"
                         >
                           Analyze

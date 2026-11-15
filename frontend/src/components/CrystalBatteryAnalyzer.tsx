@@ -47,8 +47,8 @@ export const CrystalBatteryAnalyzer: React.FC<CrystalBatteryAnalyzerProps> = ({
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col">
-      <div className="bg-white px-5 py-3.5 border-b border-slate-200 flex items-center justify-between gap-4 flex-wrap">
+    <div className="bg-surface border border-slate-200 rounded-lg overflow-hidden flex flex-col">
+      <div className="bg-surface px-5 py-3.5 border-b border-slate-200 flex items-center justify-between gap-4 flex-wrap">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-sm font-semibold text-slate-900">
@@ -69,7 +69,7 @@ export const CrystalBatteryAnalyzer: React.FC<CrystalBatteryAnalyzerProps> = ({
               onClick={() => setActiveTab('visualizer')}
               className={`px-3 py-1 rounded transition-all ${
                 activeTab === 'visualizer'
-                  ? 'bg-white text-slate-900 font-medium shadow-sm'
+                  ? 'bg-slate-300 text-slate-900 font-medium'
                   : 'text-slate-600 hover:text-slate-800'
               }`}
             >
@@ -79,7 +79,7 @@ export const CrystalBatteryAnalyzer: React.FC<CrystalBatteryAnalyzerProps> = ({
               onClick={() => setActiveTab('rawFiles')}
               className={`px-3 py-1 rounded transition-all ${
                 activeTab === 'rawFiles'
-                  ? 'bg-white text-slate-900 font-medium shadow-sm'
+                  ? 'bg-slate-300 text-slate-900 font-medium'
                   : 'text-slate-600 hover:text-slate-800'
               }`}
             >
@@ -91,7 +91,7 @@ export const CrystalBatteryAnalyzer: React.FC<CrystalBatteryAnalyzerProps> = ({
           <button
             onClick={loadAnalysis}
             disabled={loading}
-            className="p-1.5 rounded-md bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 transition-colors disabled:opacity-50"
+            className="p-1.5 rounded-md bg-surface hover:bg-slate-100 border border-slate-300 text-slate-700 transition-colors disabled:opacity-50"
             title="Recompute analysis"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -101,7 +101,7 @@ export const CrystalBatteryAnalyzer: React.FC<CrystalBatteryAnalyzerProps> = ({
           {onClose && (
             <button
               onClick={onClose}
-              className="p-1.5 rounded-md bg-white hover:bg-slate-50 border border-slate-300 text-slate-600 hover:text-slate-900 transition-colors"
+              className="p-1.5 rounded-md bg-surface hover:bg-slate-100 border border-slate-300 text-slate-600 hover:text-slate-900 transition-colors"
               title="Close analyzer view"
             >
               <X className="w-4 h-4" />
@@ -159,7 +159,7 @@ export const CrystalBatteryAnalyzer: React.FC<CrystalBatteryAnalyzerProps> = ({
               /* Raw Text Files View: Standardized CIF & POSCAR */
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Standardized CIF */}
-                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col">
+                <div className="bg-surface border border-slate-200 rounded-lg overflow-hidden flex flex-col">
                   <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-semibold text-slate-800 font-mono">
@@ -168,7 +168,7 @@ export const CrystalBatteryAnalyzer: React.FC<CrystalBatteryAnalyzerProps> = ({
                     </div>
                     <button
                       onClick={() => handleCopy(analysis.cif_standardized, 'cif')}
-                      className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 px-2 py-1 rounded bg-white border border-slate-200"
+                      className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 px-2 py-1 rounded bg-surface border border-slate-200"
                     >
                       {copiedType === 'cif' ? (
                         <>
@@ -187,7 +187,7 @@ export const CrystalBatteryAnalyzer: React.FC<CrystalBatteryAnalyzerProps> = ({
                 </div>
 
                 {/* VASP POSCAR */}
-                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col">
+                <div className="bg-surface border border-slate-200 rounded-lg overflow-hidden flex flex-col">
                   <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-semibold text-slate-800 font-mono">
@@ -196,7 +196,7 @@ export const CrystalBatteryAnalyzer: React.FC<CrystalBatteryAnalyzerProps> = ({
                     </div>
                     <button
                       onClick={() => handleCopy(analysis.poscar, 'poscar')}
-                      className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 px-2 py-1 rounded bg-white border border-slate-200"
+                      className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 px-2 py-1 rounded bg-surface border border-slate-200"
                     >
                       {copiedType === 'poscar' ? (
                         <>

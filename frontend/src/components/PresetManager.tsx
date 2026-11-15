@@ -66,7 +66,7 @@ export const PresetManager: React.FC<PresetManagerProps> = ({ onLoadPreset, onCr
         <div className="flex items-center gap-2">
           <button
             onClick={loadData}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
+            className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-slate-300 bg-surface text-slate-600 hover:bg-slate-100"
             title="Refresh presets"
             aria-label="Refresh presets"
           >
@@ -103,7 +103,7 @@ export const PresetManager: React.FC<PresetManagerProps> = ({ onLoadPreset, onCr
           Loading presets…
         </div>
       ) : presets.length === 0 ? (
-        <div className="text-center px-6 py-14 bg-white border border-dashed border-slate-300 rounded-lg">
+        <div className="text-center px-6 py-14 bg-surface border border-dashed border-slate-300 rounded-lg">
           <h3 className="text-sm font-medium text-slate-900">No presets yet</h3>
           <p className="text-sm text-slate-500 mt-1 mb-4">
             Create your first preset in the Experiment Studio or save a configuration.
@@ -116,7 +116,7 @@ export const PresetManager: React.FC<PresetManagerProps> = ({ onLoadPreset, onCr
           </button>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-surface">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium text-slate-500">
@@ -132,7 +132,7 @@ export const PresetManager: React.FC<PresetManagerProps> = ({ onLoadPreset, onCr
             </thead>
             <tbody className="divide-y divide-slate-100">
               {presets.map((preset) => (
-                <tr key={preset.id} className="hover:bg-slate-50">
+                <tr key={preset.id} className="hover:bg-slate-100">
                   <td className="px-4 py-3 align-top">
                     <div className="font-medium text-slate-900">{preset.name}</div>
                     <div className="mt-0.5 max-w-sm text-xs text-slate-500 line-clamp-1">
@@ -165,7 +165,7 @@ export const PresetManager: React.FC<PresetManagerProps> = ({ onLoadPreset, onCr
                       </button>
                       <button
                         onClick={() => onLoadPreset(preset)}
-                        className="ml-1 h-8 px-3 rounded-md border border-slate-300 bg-white text-xs font-medium text-slate-800 hover:bg-slate-50 whitespace-nowrap cursor-pointer"
+                        className="ml-1 h-8 px-3 rounded-md border border-slate-300 bg-surface text-xs font-medium text-slate-800 hover:bg-slate-100 whitespace-nowrap cursor-pointer"
                       >
                         Open in Studio
                       </button>

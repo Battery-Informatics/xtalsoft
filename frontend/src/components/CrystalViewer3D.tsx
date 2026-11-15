@@ -88,7 +88,7 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
     containerRef.current.innerHTML = '';
 
     const viewer = ($3Dmol as any).createViewer(containerRef.current, {
-      backgroundColor: '0xffffff',
+      backgroundColor: '0x1b1b1f',
     });
     viewerRef.current = viewer;
 
@@ -149,7 +149,7 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
 
     // 2. Unit cell bounding box
     if (showUnitCell) {
-      viewer.addUnitCell();
+      viewer.addUnitCell(undefined, { box: { color: '#98989f' } });
     }
 
     // 3. Atom Labels
@@ -160,8 +160,8 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
         viewer.addLabel(a.elem, {
           position: { x: a.x, y: a.y, z: a.z },
           fontSize: 10,
-          fontColor: '#0f172a',
-          backgroundColor: '#f8fafc',
+          fontColor: '#dfdfd6',
+          backgroundColor: '#202127',
           backgroundOpacity: 0.7,
         });
       }
@@ -205,7 +205,7 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col">
+    <div className="bg-surface border border-slate-200 rounded-lg overflow-hidden flex flex-col">
       {/* Viewer Toolbar */}
       <div className="bg-slate-50 p-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
         {/* Left: Supercell & Render Style */}
@@ -213,14 +213,14 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
           {/* Supercell selector */}
           <div className="flex items-center gap-1.5 text-xs text-slate-600">
             <span>Supercell:</span>
-            <div className="flex bg-white p-0.5 rounded-lg border border-slate-200">
+            <div className="flex bg-surface p-0.5 rounded-lg border border-slate-200">
               {(['1x1x1', '2x2x2', '3x3x3'] as SupercellDim[]).map((dim) => (
                 <button
                   key={dim}
                   onClick={() => setSupercell(dim)}
                   className={`px-2 py-0.5 rounded transition-all text-xs font-mono ${
                     supercell === dim
-                      ? 'bg-white text-slate-900 font-medium shadow-sm'
+                      ? 'bg-slate-300 text-slate-900 font-medium'
                       : 'text-slate-600 hover:text-slate-800'
                   }`}
                 >
@@ -233,7 +233,7 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
           {/* Style switcher */}
           <div className="flex items-center gap-1.5 text-xs text-slate-600">
             <span>Style:</span>
-            <div className="flex bg-white p-0.5 rounded-lg border border-slate-200">
+            <div className="flex bg-surface p-0.5 rounded-lg border border-slate-200">
               {[
                 { id: 'ballAndStick', label: 'Ball & Stick' },
                 { id: 'spaceFilling', label: 'Space-Filling' },
@@ -244,7 +244,7 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
                   onClick={() => setStyle(s.id as RenderStyle)}
                   className={`px-2.5 py-0.5 rounded transition-all text-xs ${
                     style === s.id
-                      ? 'bg-white text-slate-900 font-medium border border-slate-300 shadow-sm'
+                      ? 'bg-surface text-slate-900 font-medium border border-slate-300 shadow-sm'
                       : 'text-slate-600 hover:text-slate-800'
                   }`}
                 >
@@ -263,7 +263,7 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
             className={`px-2 py-1 rounded text-xs flex items-center gap-1 border transition-all ${
               showPolyhedra
                 ? 'bg-purple-50 text-purple-700 border-purple-200'
-                : 'bg-white text-slate-500 border-slate-200'
+                : 'bg-surface text-slate-500 border-slate-200'
             }`}
             title="Toggle Coordination Polyhedra / Bonds"
           >
@@ -276,7 +276,7 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
             className={`px-2 py-1 rounded text-xs flex items-center gap-1 border transition-all ${
               showUnitCell
                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : 'bg-white text-slate-500 border-slate-200'
+                : 'bg-surface text-slate-500 border-slate-200'
             }`}
             title="Toggle Unit Cell Bounding Box"
           >
@@ -290,7 +290,7 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
             className={`px-2 py-1 rounded text-xs flex items-center gap-1 border transition-all ${
               showLabels
                 ? 'bg-blue-50 text-blue-700 border-blue-200'
-                : 'bg-white text-slate-500 border-slate-200'
+                : 'bg-surface text-slate-500 border-slate-200'
             }`}
             title="Toggle Element Labels"
           >
@@ -301,7 +301,7 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
           {/* Reset Camera */}
           <button
             onClick={handleResetCamera}
-            className="p-1.5 rounded bg-white border border-slate-200 text-slate-600 hover:text-slate-800 transition-colors"
+            className="p-1.5 rounded bg-surface border border-slate-200 text-slate-600 hover:text-slate-800 transition-colors"
             title="Reset Camera View"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -334,7 +334,7 @@ export const CrystalViewer3D: React.FC<CrystalViewer3DProps> = ({ analysis }) =>
         <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
 
         {/* Floating Crystallographic Overlay Pill */}
-        <div className="absolute bottom-3 left-3 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-[11px] text-slate-700 font-mono flex items-center gap-3">
+        <div className="absolute bottom-3 left-3 bg-surface px-3 py-1.5 rounded-lg border border-slate-200 text-[11px] text-slate-700 font-mono flex items-center gap-3">
           <span className="flex items-center gap-1 text-slate-900 font-semibold">
             <Shield className="w-3.5 h-3.5" />
             {analysis.space_group.symbol} (#{analysis.space_group.number})

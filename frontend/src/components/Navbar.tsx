@@ -18,45 +18,42 @@ const TABS: { id: Tab; label: string }[] = [
 export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab, backendOnline }) => {
   const status =
     backendOnline === true
-      ? { dot: 'bg-emerald-500', label: 'Backend connected' }
+      ? { dot: 'bg-emerald-700', label: 'Backend connected' }
       : backendOnline === false
-      ? { dot: 'bg-red-500', label: 'Backend offline' }
+      ? { dot: 'bg-red-700', label: 'Backend offline' }
       : { dot: 'bg-slate-400', label: 'Connecting' };
 
   return (
-    <header className="border-b border-slate-200 bg-white sticky top-0 z-50">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-slate-50/95 backdrop-blur">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="h-14 flex items-center justify-between gap-6">
-          <div className="flex items-baseline gap-2 min-w-0">
-            <span className="font-semibold text-[15px] text-slate-900 tracking-tight">XtalOpt Workbench</span>
-            <span className="hidden sm:inline text-xs text-slate-500">Battery materials structure search</span>
+        <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-1 py-3 md:h-16 md:py-0">
+          <span className="text-[17px] font-semibold text-slate-900">XtalOpt Workbench</span>
+
+          <div className="order-last md:order-none w-full md:w-auto -mx-1 flex items-center overflow-x-auto [scrollbar-width:none]">
+            <nav className="flex items-center" aria-label="Sections">
+              {TABS.map((t) => {
+                const active = currentTab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setCurrentTab(t.id)}
+                    aria-current={active ? 'page' : undefined}
+                    className={`whitespace-nowrap px-3 py-2 text-sm font-medium transition-colors ${
+                      active ? 'text-blue-700' : 'text-slate-900 hover:text-blue-700'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
+            </nav>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-slate-600" title={status.label}>
-            <span className={`w-2 h-2 rounded-full ${status.dot}`} />
+          <div className="flex items-center gap-2 text-xs text-slate-500" title={status.label}>
+            <span className={`h-2 w-2 rounded-full ${status.dot}`} />
             <span className="hidden sm:inline">{status.label}</span>
           </div>
         </div>
-
-        <nav className="-mb-px flex gap-6 overflow-x-auto [scrollbar-width:none]" aria-label="Sections">
-          {TABS.map((t) => {
-            const active = currentTab === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setCurrentTab(t.id)}
-                aria-current={active ? 'page' : undefined}
-                className={`whitespace-nowrap border-b-2 pb-2.5 pt-1 text-sm transition-colors ${
-                  active
-                    ? 'border-blue-600 text-slate-900 font-medium'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
-                }`}
-              >
-                {t.label}
-              </button>
-            );
-          })}
-        </nav>
       </div>
     </header>
   );

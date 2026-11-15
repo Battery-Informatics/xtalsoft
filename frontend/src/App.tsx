@@ -140,7 +140,7 @@ export function App() {
                   <select
                     value={selectedAnalyzerExpId}
                     onChange={(e) => setSelectedAnalyzerExpId(e.target.value)}
-                    className="h-9 min-w-48 rounded-md border border-slate-300 bg-white px-2.5 text-sm font-normal"
+                    className="h-9 min-w-48 rounded-md border border-slate-300 bg-slate-50 px-2.5 text-sm font-normal"
                   >
                     {availableExperiments.length === 0 && <option value="">No runs yet</option>}
                     {availableExperiments.map((e) => (
@@ -158,7 +158,7 @@ export function App() {
                       setSelectedCandidateTag(e.target.value);
                       setAnalyzerTarget({ expId: selectedAnalyzerExpId, structId: e.target.value });
                     }}
-                    className="h-9 min-w-36 rounded-md border border-slate-300 bg-white px-2.5 font-mono text-sm font-normal"
+                    className="h-9 min-w-36 rounded-md border border-slate-300 bg-slate-50 px-2.5 font-mono text-sm font-normal"
                   >
                     {availableCandidates.length === 0 ? (
                       <option value="">None on disk</option>
@@ -180,7 +180,7 @@ export function App() {
                 structId={analyzerTarget.structId}
               />
             ) : (
-              <div className="rounded-lg border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+              <div className="rounded-lg border border-dashed border-slate-300 bg-surface px-6 py-16 text-center">
                 <h3 className="text-sm font-medium text-slate-900">No candidate selected</h3>
                 <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">
                   Pick a run and candidate above, or choose Analyze on a candidate in Runs.

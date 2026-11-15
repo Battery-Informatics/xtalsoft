@@ -58,12 +58,12 @@ export const ConvergencePlot: React.FC<ConvergencePlotProps> = ({
 
     // Define color mappings for known statuses
     const statusColors: Record<string, string> = {
-      Optimized: '#059669',
-      'In Process': '#0284c7',
-      Queued: '#d97706',
-      Duplicate: '#7c3aed',
-      Failed: '#dc2626',
-      Other: '#94a3b8',
+      Optimized: '#3dd68c',
+      'In Process': '#5c73e7',
+      Queued: '#f9b44e',
+      Duplicate: '#c8abfa',
+      Failed: '#f66f81',
+      Other: '#6a6a71',
     };
 
     const traces: Plotly.Data[] = [];
@@ -73,7 +73,7 @@ export const ConvergencePlot: React.FC<ConvergencePlotProps> = ({
       const groupItems = groups[groupName];
       const markerColor =
         colorBy === 'status'
-          ? statusColors[groupName] || '#94a3b8'
+          ? statusColors[groupName] || '#6a6a71'
           : `hsl(${(i * 137.5) % 360}, 70%, 55%)`;
 
       traces.push({
@@ -97,7 +97,7 @@ export const ConvergencePlot: React.FC<ConvergencePlotProps> = ({
           size: groupItems.map((s) => (s.tag === selectedTag ? 14 : 9)),
           color: markerColor,
           line: {
-            color: groupItems.map((s) => (s.tag === selectedTag ? '#0f172a' : '#ffffff')),
+            color: groupItems.map((s) => (s.tag === selectedTag ? '#dfdfd6' : '#1b1b1f')),
             width: groupItems.map((s) => (s.tag === selectedTag ? 3 : 1)),
           },
           opacity: 0.88,
@@ -133,7 +133,7 @@ export const ConvergencePlot: React.FC<ConvergencePlotProps> = ({
         type: 'scatter',
         name: 'Lowest Energy Envelope',
         line: {
-          color: '#0f172a',
+          color: '#a8b1ff',
           width: 2.5,
           shape: 'hv', // Stepped horizontal-vertical envelope line
         },
@@ -156,9 +156,9 @@ export const ConvergencePlot: React.FC<ConvergencePlotProps> = ({
           marker: {
             size: 18,
             symbol: 'circle-open',
-            color: '#d97706',
+            color: '#f9b44e',
             line: {
-              color: '#d97706',
+              color: '#f9b44e',
               width: 3,
             },
           },
@@ -170,11 +170,11 @@ export const ConvergencePlot: React.FC<ConvergencePlotProps> = ({
     const layout: Partial<Plotly.Layout> = {
       autosize: true,
       paper_bgcolor: 'transparent',
-      modebar: { bgcolor: 'rgba(255, 255, 255, 0)', color: '#94a3b8', activecolor: '#334155' },
-      plot_bgcolor: '#ffffff',
+      modebar: { bgcolor: 'rgba(0, 0, 0, 0)', color: '#6a6a71', activecolor: '#dfdfd6' },
+      plot_bgcolor: 'rgba(0, 0, 0, 0)',
       font: {
         family: 'ui-sans-serif, system-ui, sans-serif',
-        color: '#64748b',
+        color: '#98989f',
         size: 11,
       },
       margin: { l: 65, r: 25, t: 30, b: 50 },
@@ -185,28 +185,28 @@ export const ConvergencePlot: React.FC<ConvergencePlotProps> = ({
         orientation: 'h',
         x: 0,
         y: 1.15,
-        bgcolor: 'rgba(255, 255, 255, 0.9)',
-        bordercolor: '#e2e8f0',
+        bgcolor: 'rgba(32, 33, 39, 0.9)',
+        bordercolor: '#2e2e32',
         borderwidth: 1,
-        font: { size: 10, color: '#334155' },
+        font: { size: 10, color: '#98989f' },
       },
       xaxis: {
         title: {
           text: 'Structure Index',
-          font: { color: '#334155', size: 12 },
+          font: { color: '#98989f', size: 12 },
         },
-        gridcolor: '#eef2f6',
-        zerolinecolor: '#cbd5e1',
-        color: '#64748b',
+        gridcolor: '#2e2e32',
+        zerolinecolor: '#3c3f44',
+        color: '#98989f',
       },
       yaxis: {
         title: {
           text: 'Enthalpy per Atom (eV/atom)',
-          font: { color: '#334155', size: 12 },
+          font: { color: '#98989f', size: 12 },
         },
-        gridcolor: '#eef2f6',
-        zerolinecolor: '#cbd5e1',
-        color: '#64748b',
+        gridcolor: '#2e2e32',
+        zerolinecolor: '#3c3f44',
+        color: '#98989f',
       },
     };
 
@@ -249,7 +249,7 @@ export const ConvergencePlot: React.FC<ConvergencePlotProps> = ({
   }, [structures, selectedTag, colorBy, onSelectStructure]);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-4 flex flex-col ">
+    <div className="bg-surface border border-slate-200 rounded-lg p-4 flex flex-col ">
       {/* Header & Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-2 pb-3 border-b border-slate-200">
         <div className="flex items-center gap-2">
@@ -272,7 +272,7 @@ export const ConvergencePlot: React.FC<ConvergencePlotProps> = ({
               onClick={() => setColorBy('status')}
               className={`px-2.5 py-1 rounded-md transition-all ${
                 colorBy === 'status'
-                  ? 'bg-white text-slate-900 font-medium shadow-sm'
+                  ? 'bg-slate-300 text-slate-900 font-medium'
                   : 'text-slate-600 hover:text-slate-800'
               }`}
             >
@@ -282,7 +282,7 @@ export const ConvergencePlot: React.FC<ConvergencePlotProps> = ({
               onClick={() => setColorBy('spaceGroup')}
               className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1 ${
                 colorBy === 'spaceGroup'
-                  ? 'bg-white text-slate-900 font-medium shadow-sm'
+                  ? 'bg-slate-300 text-slate-900 font-medium'
                   : 'text-slate-600 hover:text-slate-800'
               }`}
             >

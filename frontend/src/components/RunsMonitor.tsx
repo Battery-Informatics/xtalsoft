@@ -209,7 +209,7 @@ export const RunsMonitor: React.FC<RunsMonitorProps> = ({
             value={selectedId || ''}
             onChange={(e) => setSelectedId(e.target.value)}
             aria-label="Select run"
-            className="h-9 max-w-xs rounded-md border border-slate-300 bg-white px-2.5 text-sm text-slate-800"
+            className="h-9 max-w-xs rounded-md border border-slate-300 bg-slate-50 px-2.5 text-sm text-slate-800"
           >
             {experiments.length === 0 ? (
               <option value="">No runs found</option>
@@ -228,7 +228,7 @@ export const RunsMonitor: React.FC<RunsMonitorProps> = ({
               if (selectedId) loadStructures(selectedId);
             }}
             disabled={loading || structuresLoading}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+            className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-slate-300 bg-surface text-slate-600 hover:bg-slate-100 disabled:opacity-50"
             title="Refresh runs and structures"
             aria-label="Refresh"
           >
@@ -239,7 +239,7 @@ export const RunsMonitor: React.FC<RunsMonitorProps> = ({
             <button
               onClick={handleStopRun}
               disabled={stopping}
-              className="h-9 px-3.5 rounded-md border border-red-300 bg-white text-red-700 hover:bg-red-50 text-sm font-medium disabled:opacity-50"
+              className="h-9 px-3.5 rounded-md border border-red-300 bg-surface text-red-700 hover:bg-red-50 text-sm font-medium disabled:opacity-50"
             >
               {stopping ? 'Stopping…' : 'Stop run'}
             </button>
@@ -256,15 +256,15 @@ export const RunsMonitor: React.FC<RunsMonitorProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-px overflow-hidden rounded-lg border border-slate-200 bg-slate-200">
-        <div className="bg-white px-4 py-3.5">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-px overflow-hidden rounded-lg border border-slate-200 bg-slate-200">
+        <div className="bg-surface px-4 py-3.5">
           <div className="text-xs text-slate-500">Structures</div>
           <div className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">
             {telemetry?.population.total_generated ?? structures.length}
           </div>
           <div className="mt-0.5 text-xs text-slate-500 truncate">{structures.length} parsed on disk</div>
         </div>
-        <div className="bg-white px-4 py-3.5">
+        <div className="bg-surface px-4 py-3.5">
           <div className="text-xs text-slate-500">Optimized</div>
           <div className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">
             {telemetry?.population.completed_optimized ??
@@ -272,21 +272,21 @@ export const RunsMonitor: React.FC<RunsMonitorProps> = ({
           </div>
           <div className="mt-0.5 text-xs text-slate-500 truncate">Relaxed candidates</div>
         </div>
-        <div className="bg-white px-4 py-3.5">
+        <div className="bg-surface px-4 py-3.5">
           <div className="text-xs text-slate-500">Running / queued</div>
           <div className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">
             {(telemetry?.population.currently_optimizing ?? 0) + (telemetry?.population.queued ?? 0)}
           </div>
           <div className="mt-0.5 text-xs text-slate-500 truncate">{telemetry?.population.currently_optimizing ?? 0} active, {telemetry?.population.queued ?? 0} waiting</div>
         </div>
-        <div className="bg-white px-4 py-3.5">
+        <div className="bg-surface px-4 py-3.5">
           <div className="text-xs text-slate-500">Duplicates</div>
           <div className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">
             {telemetry?.population.duplicate ?? 0}
           </div>
           <div className="mt-0.5 text-xs text-slate-500 truncate">Removed by fingerprint</div>
         </div>
-        <div className="bg-white px-4 py-3.5 col-span-2 sm:col-span-1">
+        <div className="bg-surface px-4 py-3.5 col-span-2 lg:col-span-1">
           <div className="text-xs text-slate-500">Lowest enthalpy (eV/atom)</div>
           <div className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">
             {telemetry?.population.best_enthalpy_per_atom !== null &&
@@ -306,7 +306,7 @@ export const RunsMonitor: React.FC<RunsMonitorProps> = ({
         />
 
         {selectedStructure && (
-          <div className="bg-white border border-slate-200 rounded-lg px-4 py-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="bg-surface border border-slate-200 rounded-lg px-4 py-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="font-semibold text-slate-900 text-sm">
@@ -360,7 +360,7 @@ export const RunsMonitor: React.FC<RunsMonitorProps> = ({
                 }
                 setIsAnalyzerOpen(true);
               }}
-              className="shrink-0 h-9 px-3.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-sm font-medium cursor-pointer"
+              className="shrink-0 h-9 px-3.5 rounded-md border border-slate-300 bg-surface hover:bg-slate-100 text-slate-800 text-sm font-medium cursor-pointer"
               title="Open 3D structure, XRD and cathode metrics"
             >
               Analyze structure

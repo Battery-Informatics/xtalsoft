@@ -12,7 +12,7 @@ export const StructuralCathodeMetrics: React.FC<StructuralCathodeMetricsProps> =
 
   return (
     <div className="space-y-4">
-      <div className="bg-white border border-slate-200 rounded-lg p-4">
+      <div className="bg-surface border border-slate-200 rounded-lg p-4">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h4 className="text-xs font-medium text-slate-500">Theoretical gravimetric capacity</h4>
@@ -53,7 +53,7 @@ export const StructuralCathodeMetrics: React.FC<StructuralCathodeMetricsProps> =
       </div>
 
       {/* 2. Crystallographic Geometry & Lattice Parameters Card */}
-      <div className="bg-white border border-slate-200 rounded-lg p-4 ">
+      <div className="bg-surface border border-slate-200 rounded-lg p-4 ">
         <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200">
           <div className="flex items-center gap-2">
             <h4 className="text-sm font-semibold text-slate-900">
@@ -112,7 +112,7 @@ export const StructuralCathodeMetrics: React.FC<StructuralCathodeMetricsProps> =
       </div>
 
       {/* 3. Nearest-Neighbor Coordination & TM-O / Li-O Bond Distances */}
-      <div className="bg-white border border-slate-200 rounded-lg p-4 ">
+      <div className="bg-surface border border-slate-200 rounded-lg p-4 ">
         <div className="flex items-center gap-2 pb-3 mb-3 border-b border-slate-200">
           <h4 className="text-sm font-semibold text-slate-900">
             Nearest-Neighbor Coordination & Bond Lengths (TM–O & Li–O)

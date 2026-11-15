@@ -1,11 +1,68 @@
 @import "tailwindcss";
 
+/*
+ * Colour tokens follow the Battery Informatics documentation site
+ * (VitePress dark theme), so the workbench and the docs look like one product.
+ * Components use Tailwind's slate / blue / status scales; this block maps those
+ * scales onto the docs palette in one place.
+ */
 @theme {
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+
+  --radius-lg: 12px;
+
+  /* surfaces */
+  --color-surface: #202127;      /* cards (docs: --vp-c-bg-soft) */
+
+  /* neutral scale: low numbers = backgrounds, high numbers = text */
+  --color-slate-50: #1b1b1f;     /* page + wells (docs: --vp-c-bg) */
+  --color-slate-100: #2b2b31;    /* hover, chips, toggle track */
+  --color-slate-200: #2e2e32;    /* dividers (docs: --vp-c-divider) */
+  --color-slate-300: #3c3f44;    /* control borders (docs: --vp-c-border) */
+  --color-slate-400: #6a6a71;    /* faint text (docs: --vp-c-text-3) */
+  --color-slate-500: #98989f;    /* secondary text (docs: --vp-c-text-2) */
+  --color-slate-600: #a3a3aa;
+  --color-slate-700: #c2c2bc;
+  --color-slate-800: #d4d4cc;
+  --color-slate-900: #dfdfd6;    /* primary text (docs: --vp-c-text-1) */
+
+  /* brand: docs indigo */
+  --color-blue-50: rgb(100 108 255 / 0.16);
+  --color-blue-100: rgb(100 108 255 / 0.24);
+  --color-blue-200: rgb(100 108 255 / 0.4);
+  --color-blue-500: #5c73e7;
+  --color-blue-600: #3e63dd;     /* primary button (docs: brand-3) */
+  --color-blue-700: #a8b1ff;     /* links, accents (docs: brand-1) */
+
+  /* status colours: docs green / yellow / red / purple, soft backgrounds */
+  --color-emerald-50: rgb(16 185 129 / 0.16);
+  --color-emerald-200: rgb(16 185 129 / 0.4);
+  --color-emerald-500: #30a46c;
+  --color-emerald-700: #3dd68c;
+  --color-emerald-800: #3dd68c;
+  --color-amber-50: rgb(234 179 8 / 0.16);
+  --color-amber-200: rgb(234 179 8 / 0.4);
+  --color-amber-700: #f9b44e;
+  --color-red-50: rgb(244 63 94 / 0.16);
+  --color-red-200: rgb(244 63 94 / 0.4);
+  --color-red-300: rgb(244 63 94 / 0.55);
+  --color-red-500: #f14158;
+  --color-red-700: #f66f81;
+  --color-red-800: #f66f81;
+  --color-rose-50: rgb(244 63 94 / 0.16);
+  --color-rose-200: rgb(244 63 94 / 0.4);
+  --color-rose-700: #f66f81;
+  --color-purple-50: rgb(159 122 234 / 0.16);
+  --color-purple-200: rgb(159 122 234 / 0.4);
+  --color-purple-700: #c8abfa;
 }
 
 @layer base {
+  :root {
+    color-scheme: dark;
+  }
+
   body {
     @apply bg-slate-50 text-slate-900 antialiased font-sans;
   }
@@ -16,11 +73,16 @@
     @apply text-slate-900;
   }
 
+  option {
+    background: var(--color-surface);
+    color: var(--color-slate-900);
+  }
+
   input:focus-visible,
   select:focus-visible,
   textarea:focus-visible,
   button:focus-visible {
-    outline: 2px solid var(--color-blue-600);
+    outline: 2px solid var(--color-blue-500);
     outline-offset: 1px;
   }
 

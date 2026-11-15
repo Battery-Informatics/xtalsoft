@@ -17,7 +17,7 @@ export const XtaloptInPreview: React.FC<PreviewProps> = ({ content, loading, onR
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col h-full ">
+    <div className="bg-surface border border-slate-200 rounded-lg overflow-hidden flex flex-col h-full ">
       <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center gap-2 text-slate-800 font-semibold text-sm">
           <span>xtalopt.in Live Preview</span>

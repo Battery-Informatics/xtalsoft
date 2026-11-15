@@ -54,7 +54,7 @@ export const TerminalLogDrawer: React.FC<TerminalLogDrawerProps> = ({
     }
 
     return (
-      <div key={index} className="flex leading-5 hover:bg-white px-2 py-0.5 rounded font-mono text-xs">
+      <div key={index} className="flex leading-5 hover:bg-surface px-2 py-0.5 rounded font-mono text-xs">
         <span className="w-12 text-slate-400 select-none text-right pr-3 shrink-0">
           {index + 1}
         </span>
@@ -70,7 +70,7 @@ export const TerminalLogDrawer: React.FC<TerminalLogDrawerProps> = ({
       }`}
     >
       {/* Top Header Bar */}
-      <div className="bg-white px-4 py-2.5 flex items-center justify-between border-b border-slate-200">
+      <div className="bg-surface px-4 py-2.5 flex items-center justify-between border-b border-slate-200">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsOpen(!isOpen)}
@@ -106,7 +106,7 @@ export const TerminalLogDrawer: React.FC<TerminalLogDrawerProps> = ({
             >
               <FileText className="w-3 h-3" />
               stdout
-              <span className="text-[10px] bg-white px-1.5 rounded-full text-slate-600 ml-0.5">
+              <span className="text-[10px] bg-surface px-1.5 rounded-full text-slate-600 ml-0.5">
                 {stdoutLines.length}
               </span>
             </button>
@@ -134,7 +134,7 @@ export const TerminalLogDrawer: React.FC<TerminalLogDrawerProps> = ({
             className={`px-2 py-1 rounded text-xs transition-colors flex items-center gap-1 border ${
               autoScroll
                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : 'bg-white text-slate-600 border-slate-200 hover:text-slate-800'
+                : 'bg-surface text-slate-600 border-slate-200 hover:text-slate-800'
             }`}
             title="Auto-scroll to latest output"
           >
@@ -145,7 +145,7 @@ export const TerminalLogDrawer: React.FC<TerminalLogDrawerProps> = ({
           {/* Copy logs */}
           <button
             onClick={handleCopyLogs}
-            className="p-1.5 rounded text-slate-600 hover:text-slate-800 bg-white border border-slate-200 hover:bg-slate-100 transition-colors"
+            className="p-1.5 rounded text-slate-600 hover:text-slate-800 bg-surface border border-slate-200 hover:bg-slate-100 transition-colors"
             title="Copy logs to clipboard"
           >
             {copied ? (
@@ -158,7 +158,7 @@ export const TerminalLogDrawer: React.FC<TerminalLogDrawerProps> = ({
           {/* Expand / Minimize toggle */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1.5 rounded text-slate-600 hover:text-slate-800 bg-white border border-slate-200 hover:bg-slate-100 transition-colors"
+            className="p-1.5 rounded text-slate-600 hover:text-slate-800 bg-surface border border-slate-200 hover:bg-slate-100 transition-colors"
             title={isExpanded ? 'Minimize drawer' : 'Maximize drawer'}
           >
             {isExpanded ? (

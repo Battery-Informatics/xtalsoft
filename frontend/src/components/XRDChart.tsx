@@ -127,7 +127,7 @@ export const XRDChart: React.FC<XRDChartProps> = ({ xrdPeaks, formula, tag }) =>
       type: 'scatter',
       name: `Simulated Peaks (${formula})`,
       line: {
-        color: '#1d4ed8',
+        color: '#a8b1ff',
         width: 2,
       },
       hoverinfo: 'skip',
@@ -144,9 +144,9 @@ export const XRDChart: React.FC<XRDChartProps> = ({ xrdPeaks, formula, tag }) =>
       name: 'Reflections (hkl)',
       marker: {
         size: 7,
-        color: '#1d4ed8',
+        color: '#a8b1ff',
         symbol: 'circle',
-        line: { color: '#1e3a8a', width: 1 },
+        line: { color: '#5c73e7', width: 1 },
       },
     });
 
@@ -159,7 +159,7 @@ export const XRDChart: React.FC<XRDChartProps> = ({ xrdPeaks, formula, tag }) =>
         type: 'scatter',
         name: `Observed: ${experimentalData.filename}`,
         line: {
-          color: '#dc2626',
+          color: '#f66f81',
           width: 2,
         },
         hoverinfo: 'x+y',
@@ -169,11 +169,11 @@ export const XRDChart: React.FC<XRDChartProps> = ({ xrdPeaks, formula, tag }) =>
     const layout: Partial<Plotly.Layout> = {
       autosize: true,
       paper_bgcolor: 'transparent',
-      modebar: { bgcolor: 'rgba(255, 255, 255, 0)', color: '#94a3b8', activecolor: '#334155' },
-      plot_bgcolor: '#ffffff',
+      modebar: { bgcolor: 'rgba(0, 0, 0, 0)', color: '#6a6a71', activecolor: '#dfdfd6' },
+      plot_bgcolor: 'rgba(0, 0, 0, 0)',
       font: {
         family: 'ui-sans-serif, system-ui, sans-serif',
-        color: '#64748b',
+        color: '#98989f',
         size: 11,
       },
       margin: { l: 60, r: 25, t: 25, b: 50 },
@@ -184,30 +184,30 @@ export const XRDChart: React.FC<XRDChartProps> = ({ xrdPeaks, formula, tag }) =>
         orientation: 'h',
         x: 0,
         y: 1.15,
-        bgcolor: 'rgba(255, 255, 255, 0.9)',
-        bordercolor: '#e2e8f0',
+        bgcolor: 'rgba(32, 33, 39, 0.9)',
+        bordercolor: '#2e2e32',
         borderwidth: 1,
-        font: { size: 10, color: '#334155' },
+        font: { size: 10, color: '#98989f' },
       },
       xaxis: {
         title: {
           text: 'Diffraction Angle 2θ (deg, Cu Kα)',
-          font: { color: '#334155', size: 12 },
+          font: { color: '#98989f', size: 12 },
         },
         range: [10, 80],
-        gridcolor: '#eef2f6',
-        zerolinecolor: '#cbd5e1',
-        color: '#64748b',
+        gridcolor: '#2e2e32',
+        zerolinecolor: '#3c3f44',
+        color: '#98989f',
       },
       yaxis: {
         title: {
           text: 'Relative Intensity (%)',
-          font: { color: '#334155', size: 12 },
+          font: { color: '#98989f', size: 12 },
         },
         range: [-2, 110],
-        gridcolor: '#eef2f6',
-        zerolinecolor: '#cbd5e1',
-        color: '#64748b',
+        gridcolor: '#2e2e32',
+        zerolinecolor: '#3c3f44',
+        color: '#98989f',
       },
     };
 
@@ -232,7 +232,7 @@ export const XRDChart: React.FC<XRDChartProps> = ({ xrdPeaks, formula, tag }) =>
   }, [xrdPeaks, formula, experimentalData]);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-4 flex flex-col ">
+    <div className="bg-surface border border-slate-200 rounded-lg p-4 flex flex-col ">
       {/* Header & Experimental Overlay Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-2 pb-3 border-b border-slate-200">
         <div>

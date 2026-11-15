@@ -31,7 +31,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onChan
       </div>
 
       {/* Placeholder validation pills */}
-      <div className="bg-white p-3 rounded-lg border border-slate-200">
+      <div className="bg-surface p-3 rounded-lg border border-slate-200">
         <div className="text-[11px] font-semibold text-slate-600 uppercase mb-2">
           Required XtalOpt Macro Tags
         </div>
@@ -66,7 +66,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onChan
           rows={14}
           value={template}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-white px-4 py-3 font-mono text-xs text-slate-900 placeholder-slate-600 focus:outline-none resize-y leading-relaxed"
+          className="w-full bg-slate-50 px-4 py-3 font-mono text-xs text-slate-900 placeholder-slate-600 focus:outline-none resize-y leading-relaxed"
           placeholder="opti conj conp&#10;cell&#10;  %a% %b% %c% %alphaDeg% %betaDeg% %gammaDeg%&#10;frac&#10;%coordsFrac%..."
           spellCheck={false}
         />

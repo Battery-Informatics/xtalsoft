@@ -184,14 +184,14 @@ Ti O  1 0 15
           <button
             onClick={handleSavePreset}
             disabled={submitting}
-            className="h-9 px-3.5 rounded-md text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 disabled:opacity-50 cursor-pointer"
+            className="h-9 px-3.5 rounded-md text-sm font-medium text-slate-700 bg-surface hover:bg-slate-100 border border-slate-300 disabled:opacity-50 cursor-pointer"
           >
             Save as preset
           </button>
           <button
             onClick={() => handleLaunchExperiment(false)}
             disabled={submitting}
-            className="h-9 px-3.5 rounded-md text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 disabled:opacity-50 cursor-pointer"
+            className="h-9 px-3.5 rounded-md text-sm font-medium text-slate-700 bg-surface hover:bg-slate-100 border border-slate-300 disabled:opacity-50 cursor-pointer"
           >
             Stage only
           </button>
@@ -226,7 +226,7 @@ Ti O  1 0 15
         {/* Left Columns: Form Fields */}
         <div className="lg:col-span-7 space-y-6">
           {/* General Metadata */}
-          <div className="bg-white border border-slate-200 rounded-lg p-5 space-y-4">
+          <div className="bg-surface border border-slate-200 rounded-lg p-5 space-y-4">
             <h2 className="text-sm font-semibold text-slate-900">
               Details
             </h2>
@@ -239,7 +239,7 @@ Ti O  1 0 15
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-md px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-600"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-md px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-600"
                   placeholder="e.g. LiCoO2 Cathode GULP Screening"
                 />
               </div>
@@ -251,7 +251,7 @@ Ti O  1 0 15
                   rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-md px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-600"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-md px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-600"
                   placeholder="Research motivation, force-field notes, expected polymorphs..."
                 />
               </div>
@@ -259,7 +259,7 @@ Ti O  1 0 15
           </div>
 
           {/* Formula Unit Builder & Population Parameters */}
-          <div className="bg-white border border-slate-200 rounded-lg p-5 space-y-4">
+          <div className="bg-surface border border-slate-200 rounded-lg p-5 space-y-4">
             <h2 className="text-sm font-semibold text-slate-900">
               Composition and population
             </h2>
@@ -273,7 +273,7 @@ Ti O  1 0 15
                   type="text"
                   value={chemicalFormulas}
                   onChange={(e) => setChemicalFormulas(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-md px-3.5 py-2.5 text-sm font-mono text-slate-900 focus:outline-none focus:border-blue-600"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-md px-3.5 py-2.5 text-sm font-mono text-slate-900 focus:outline-none focus:border-blue-600"
                   placeholder="e.g. Ti2O4 - Ti4O8, or Li1Fe1P1O4"
                 />
                 <p className="text-[11px] text-slate-500 mt-1">
@@ -292,7 +292,7 @@ Ti O  1 0 15
                     min={1}
                     value={minAtoms}
                     onChange={(e) => setMinAtoms(Number(e.target.value))}
-                    className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm font-mono text-slate-800 focus:outline-none focus:border-blue-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-sm font-mono text-slate-800 focus:outline-none focus:border-blue-600"
                   />
                 </div>
                 <div>
@@ -304,7 +304,7 @@ Ti O  1 0 15
                     min={1}
                     value={maxAtoms}
                     onChange={(e) => setMaxAtoms(Number(e.target.value))}
-                    className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm font-mono text-slate-800 focus:outline-none focus:border-blue-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-sm font-mono text-slate-800 focus:outline-none focus:border-blue-600"
                   />
                 </div>
               </div>
@@ -320,7 +320,7 @@ Ti O  1 0 15
                     min={1}
                     value={numInitial}
                     onChange={(e) => setNumInitial(Number(e.target.value))}
-                    className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm font-mono text-slate-800 focus:outline-none focus:border-blue-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-sm font-mono text-slate-800 focus:outline-none focus:border-blue-600"
                   />
                 </div>
                 <div>
@@ -332,7 +332,7 @@ Ti O  1 0 15
                     min={1}
                     value={popSize}
                     onChange={(e) => setPopSize(Number(e.target.value))}
-                    className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm font-mono text-slate-800 focus:outline-none focus:border-blue-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-sm font-mono text-slate-800 focus:outline-none focus:border-blue-600"
                   />
                 </div>
                 <div>
@@ -344,7 +344,7 @@ Ti O  1 0 15
                     min={1}
                     value={maxNumStructures}
                     onChange={(e) => setMaxNumStructures(Number(e.target.value))}
-                    className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm font-mono text-slate-800 focus:outline-none focus:border-blue-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-sm font-mono text-slate-800 focus:outline-none focus:border-blue-600"
                   />
                 </div>
               </div>
@@ -358,7 +358,7 @@ Ti O  1 0 15
                   type="text"
                   value={referenceEnergies}
                   onChange={(e) => setReferenceEnergies(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-md px-3.5 py-2 text-sm font-mono text-slate-800 focus:outline-none focus:border-blue-600"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-md px-3.5 py-2 text-sm font-mono text-slate-800 focus:outline-none focus:border-blue-600"
                   placeholder="e.g. Ti3 -14.18719749, O4 -10.19855357"
                 />
               </div>
@@ -366,7 +366,7 @@ Ti O  1 0 15
           </div>
 
           {/* GULP Template Editor */}
-          <div className="bg-white border border-slate-200 rounded-lg p-5">
+          <div className="bg-surface border border-slate-200 rounded-lg p-5">
             <TemplateEditor template={ginTemplate} onChange={setGinTemplate} />
           </div>
         </div>
