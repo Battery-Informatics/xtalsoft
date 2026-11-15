@@ -164,3 +164,4 @@ Inside the execution environment with compiled XtalOpt:
 * **Check Status**: `GET /api/runs/<exp_id>/status`
 * **Tail Logs**: `GET /api/runs/<exp_id>/logs?tail=100`
 * **Stop Run**: `POST /api/runs/<exp_id>/stop`
+
