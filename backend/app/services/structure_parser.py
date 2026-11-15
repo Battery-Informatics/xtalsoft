@@ -353,7 +353,14 @@ def parse_gulp_output(got_path: Path) -> Optional[Dict[str, Any]]:
             elif "Final fractional coordinates of atoms" in line:
                 atomic_numbers = []
                 frac_coords = []
-                i += 5  # Skip header lines down to first atom
+                i += 1
+                # Skip header lines until we see the dashed separator
+                while i < len(lines) and "------------------" not in lines[i]:
+                    i += 1
+                i += 1  # Skip first separator
+                while i < len(lines) and "------------------" not in lines[i]:
+                    i += 1
+                i += 1  # Skip second separator to reach atom data
                 while i < len(lines):
                     atom_line = lines[i].strip()
                     if "------------------" in atom_line or not atom_line:
